@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageSquare, ThumbsUp, Clock, User, Plus, Filter } from "lucide-react";
+import { MessageSquare, ThumbsUp, Clock, User, Plus, Filter, Home } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface ForumPost {
@@ -56,11 +56,19 @@ export default function Forum() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-neutral-900 mb-2">Community Forum</h1>
-            <p className="text-lg text-neutral-600">
-              Share knowledge, ask questions, and connect with other tech support learners
-            </p>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" asChild className="flex items-center gap-2">
+              <Link href="/">
+                <Home className="w-4 h-4" />
+                Home
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">Community Forum</h1>
+              <p className="text-lg text-neutral-600">
+                Share knowledge, ask questions, and connect with other tech support learners
+              </p>
+            </div>
           </div>
           <Button asChild className="flex items-center gap-2">
             <Link href="/forum/create">
