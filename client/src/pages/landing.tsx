@@ -45,7 +45,7 @@ export default function Landing() {
                 Featured Masterclass
               </Badge>
               <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
-                Master Everyday Computer Skills & Troubleshooting
+                Everyday Tech Fixes: Basic Computer Skills for Real Life
               </h1>
               <p className="text-xl text-blue-100 mb-8 leading-relaxed">
                 Learn essential computer skills including task manager usage, printer setup, router configuration, and everyday troubleshooting. Perfect for building confidence with technology.
