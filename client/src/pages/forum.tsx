@@ -1,22 +1,11 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { MessageSquare, ThumbsUp, Clock, User, Plus, Filter } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -49,19 +38,6 @@ const categories = [
 
 export default function Forum() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const form = useForm<PostFormData>({
-    resolver: zodResolver(postFormSchema),
-    defaultValues: {
-      title: "",
-      content: "",
-      category: "General",
-    },
-  });
 
   const { data: posts = [], isLoading } = useQuery<ForumPost[]>({
     queryKey: ['/api/forum/posts', selectedCategory],
