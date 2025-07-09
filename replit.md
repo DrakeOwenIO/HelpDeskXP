@@ -2,7 +2,7 @@
 
 ## Overview
 
-HelpDeskXP is a full-stack web application built as a learning platform focused on computer troubleshooting and tech support education. The application provides courses on hardware basics, security & safety, and software solutions, offering both free and premium content to users.
+HelpDeskXP is a full-stack web application built as a learning platform focused on computer troubleshooting and tech support education. The application launches with a single comprehensive masterclass course on everyday computer usage and troubleshooting, featuring a fixed-price model with no free courses or monthly memberships initially.
 
 ## User Preferences
 
@@ -39,11 +39,12 @@ Preferred communication style: Simple, everyday language.
 - User roles (admin, premium, regular users)
 
 ### Course Management
-- Course CRUD operations with categories (Hardware, Security, Software)
-- Difficulty levels (Beginner, Intermediate, Advanced)
-- Free and premium course tiers
+- Single masterclass course model focusing on everyday computer usage and troubleshooting
+- Course covers task manager usage, printer setup, router configuration, and essential troubleshooting
+- Fixed-price model with one-time payment ($97)
 - Course enrollment and progress tracking
-- Purchase system for premium content
+- Purchase system for single course access
+- "More courses coming soon" messaging for future expansion
 
 ### Community Forum System
 - Public forum access for reading posts and replies
@@ -75,11 +76,11 @@ Preferred communication style: Simple, everyday language.
 4. Frontend receives user data via `/api/auth/user`
 
 ### Course Interaction Flow
-1. User browses courses via `/api/courses` endpoints
-2. Free courses accessible immediately
-3. Premium courses require purchase
-4. Enrollment creates progress tracking records
-5. Progress updates sync to database
+1. User views single masterclass course on homepage
+2. Fixed-price course requires purchase for access
+3. Enrollment creates progress tracking records
+4. Progress updates sync to database
+5. "More courses coming soon" messaging builds anticipation for future offerings
 
 ### Forum Interaction Flow
 1. Anyone can read forum posts and replies without signing in
@@ -142,3 +143,10 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: Replit-specific OIDC configuration
 
 The application follows a monorepo structure with clear separation between client, server, and shared code, enabling efficient development and deployment while maintaining type safety throughout the stack.
+
+## Recent Changes (July 2025)
+- **Homepage Restructure**: Transformed from multi-course catalog to single masterclass focus
+- **Business Model**: Changed from free/premium tiers to single fixed-price course ($97)
+- **Course Content**: Focused on everyday computer usage and troubleshooting (task manager, printer setup, router access, etc.)
+- **Future Expansion**: Added "More courses coming soon" messaging for Advanced Security, Hardware Diagnostics, and Enterprise Support
+- **Admin Navigation**: Added back buttons to course and blog management pages for improved UX

@@ -2,15 +2,16 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
-import CourseCard from "@/components/course-card";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Clock, Award, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, Clock, Award, TrendingUp, Star, CheckCircle, Play, Users, Calendar } from "lucide-react";
 import type { Course, Enrollment } from "@shared/schema";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { Link } from "wouter";
 
 export default function Home() {
   const { toast } = useToast();
@@ -42,10 +43,15 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
-  const { data: freeCourses } = useQuery<Course[]>({
-    queryKey: ["/api/courses/free"],
-    retry: false,
-  });
+  // Find the main masterclass course (assuming it's the first or has specific title)
+  const masterclassCourse = courses?.find(course => 
+    course.title.toLowerCase().includes('masterclass') || 
+    course.title.toLowerCase().includes('computer usage') ||
+    course.title.toLowerCase().includes('everyday')
+  ) || courses?.[0];
+
+  const isEnrolled = enrollments?.some(e => e.courseId === masterclassCourse?.id);
+  const courseProgress = enrollments?.find(e => e.courseId === masterclassCourse?.id)?.progress || 0;
 
   if (isLoading || coursesLoading) {
     return (
@@ -53,25 +59,17 @@ export default function Home() {
         <Navigation />
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid gap-6">
-            <Skeleton className="h-32 w-full" />
-            <div className="grid md:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-64 w-full" />
-              ))}
+            <Skeleton className="h-96 w-full" />
+            <div className="grid md:grid-cols-2 gap-6">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
             </div>
+            <Skeleton className="h-64 w-full" />
           </div>
         </div>
       </div>
     );
   }
-
-  const enrolledCourses = courses?.filter(course => 
-    enrollments?.some(enrollment => enrollment.courseId === course.id)
-  ) || [];
-
-  const completedCourses = enrollments?.filter(e => e.completed).length || 0;
-  const totalProgress = enrollments?.reduce((sum, e) => sum + e.progress, 0) || 0;
-  const avgProgress = enrollments?.length ? Math.round(totalProgress / enrollments.length) : 0;
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -84,137 +82,215 @@ export default function Home() {
             Welcome back, {user?.firstName || 'Student'}!
           </h1>
           <p className="text-lg text-neutral-600">
-            Continue your learning journey and master new tech support skills.
+            Master everyday computer skills and troubleshooting with our comprehensive course.
           </p>
         </div>
 
-        {/* Progress Dashboard */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mr-4">
-                  <BookOpen className="text-white w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-600">Enrolled Courses</p>
-                  <p className="text-2xl font-bold text-neutral-900">{enrolledCourses.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center mr-4">
-                  <Award className="text-white w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-600">Completed</p>
-                  <p className="text-2xl font-bold text-neutral-900">{completedCourses}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center mr-4">
-                  <TrendingUp className="text-white w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-600">Avg Progress</p>
-                  <p className="text-2xl font-bold text-neutral-900">{avgProgress}%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
-                  <Clock className="text-white w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-600">Study Hours</p>
-                  <p className="text-2xl font-bold text-neutral-900">12.5</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Continue Learning */}
-        {enrolledCourses.length > 0 && (
+        {/* Main Course Hero Section */}
+        {masterclassCourse && (
           <section className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-neutral-900">Continue Learning</h2>
-              <Button variant="link" className="text-primary">View All</Button>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrolledCourses.slice(0, 3).map((course) => {
-                const enrollment = enrollments?.find(e => e.courseId === course.id);
-                return (
-                  <Card key={course.id} className="overflow-hidden">
-                    <img 
-                      src={course.thumbnailUrl || "https://images.unsplash.com/photo-1588508065123-287b28e013da?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=200"}
-                      alt={course.title}
-                      className="w-full h-32 object-cover"
-                    />
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-neutral-900 mb-2">{course.title}</h3>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{enrollment?.progress || 0}%</span>
-                        </div>
-                        <Progress value={enrollment?.progress || 0} className="h-2" />
+            <Card className="overflow-hidden">
+              <div className="grid md:grid-cols-2 gap-0">
+                <div className="relative">
+                  <img 
+                    src={masterclassCourse.thumbnailUrl || "https://images.unsplash.com/photo-1588508065123-287b28e013da?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600"}
+                    alt={masterclassCourse.title}
+                    className="w-full h-full object-cover min-h-[400px]"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Play className="w-8 h-8 text-white ml-1" />
                       </div>
-                      <Button className="w-full mt-4" size="sm">
-                        Continue Course
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                      <p className="text-white text-sm">Watch Preview</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="secondary" className="bg-primary text-white">
+                      <Star className="w-3 h-3 mr-1" />
+                      Featured Course
+                    </Badge>
+                    <Badge variant="outline">{masterclassCourse.level}</Badge>
+                  </div>
+                  
+                  <h2 className="text-2xl font-bold text-neutral-900 mb-4">
+                    {masterclassCourse.title}
+                  </h2>
+                  
+                  <p className="text-neutral-600 mb-6">
+                    {masterclassCourse.description || "Learn essential computer skills including task manager usage, printer setup, router configuration, and everyday troubleshooting techniques. Perfect for building confidence with technology."}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="flex items-center text-sm text-neutral-600">
+                      <Clock className="w-4 h-4 mr-2" />
+                      {masterclassCourse.duration || "8+ hours"}
+                    </div>
+                    <div className="flex items-center text-sm text-neutral-600">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      50+ lessons
+                    </div>
+                    <div className="flex items-center text-sm text-neutral-600">
+                      <Users className="w-4 h-4 mr-2" />
+                      1,200+ students
+                    </div>
+                    <div className="flex items-center text-sm text-neutral-600">
+                      <Award className="w-4 h-4 mr-2" />
+                      Certificate
+                    </div>
+                  </div>
+
+                  {isEnrolled ? (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-neutral-600">Your Progress</span>
+                        <span className="text-sm font-semibold">{courseProgress}%</span>
+                      </div>
+                      <Progress value={courseProgress} className="h-2" />
+                      <Link href={`/courses/${masterclassCourse.id}`}>
+                        <Button size="lg" className="w-full">
+                          {courseProgress === 0 ? 'Start Course' : 'Continue Learning'}
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl font-bold text-neutral-900">
+                          ${masterclassCourse.price || 97}
+                        </span>
+                        <span className="text-sm text-neutral-500">One-time payment</span>
+                      </div>
+                      <Link href={`/courses/${masterclassCourse.id}`}>
+                        <Button size="lg" className="w-full">
+                          Enroll Now
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </div>
+            </Card>
           </section>
         )}
 
-        {/* Recommended Courses */}
-        <section className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-neutral-900">
-              {user?.isPremium ? "New Courses for You" : "Free Courses to Get Started"}
-            </h2>
-            <Button variant="link" className="text-primary">View All</Button>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(user?.isPremium ? courses?.slice(0, 6) : freeCourses?.slice(0, 6))?.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
-        </section>
+        {/* Quick Stats */}
+        {isEnrolled && (
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mr-4">
+                    <BookOpen className="text-white w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-neutral-600">Course Progress</p>
+                    <p className="text-2xl font-bold text-neutral-900">{courseProgress}%</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Upgrade Banner */}
-        {!user?.isPremium && (
-          <Card className="bg-gradient-to-r from-primary to-blue-700 text-white">
-            <CardContent className="p-8 text-center">
-              <h3 className="text-2xl font-bold mb-4">Unlock All Courses</h3>
-              <p className="text-blue-100 mb-6">
-                Get unlimited access to all premium courses, new content monthly, and priority support.
-              </p>
-              <Button className="bg-white text-primary hover:bg-neutral-100">
-                Upgrade to Premium - $19/month
-              </Button>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center mr-4">
+                    <Clock className="text-white w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-neutral-600">Time Invested</p>
+                    <p className="text-2xl font-bold text-neutral-900">{Math.floor(courseProgress * 0.08)}h</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center mr-4">
+                    <Award className="text-white w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-neutral-600">Completion</p>
+                    <p className="text-2xl font-bold text-neutral-900">
+                      {courseProgress === 100 ? 'Done!' : 'In Progress'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Course Highlights */}
+        <section className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">What You'll Learn</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-neutral-900">Task Manager Mastery</p>
+                    <p className="text-sm text-neutral-600">Learn to monitor and manage system processes effectively</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-neutral-900">Printer Setup & Troubleshooting</p>
+                    <p className="text-sm text-neutral-600">Connect and configure printers with confidence</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-neutral-900">Router Configuration</p>
+                    <p className="text-sm text-neutral-600">Access and manage your home network settings</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-neutral-900">Essential Troubleshooting</p>
+                    <p className="text-sm text-neutral-600">Solve common computer problems step-by-step</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
+        </section>
+
+        {/* Coming Soon Banner */}
+        <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <CardContent className="p-8 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Calendar className="w-6 h-6 mr-2" />
+              <h3 className="text-2xl font-bold">More Courses Coming Soon!</h3>
+            </div>
+            <p className="text-blue-100 mb-6">
+              We're developing advanced courses on network security, hardware diagnostics, and enterprise troubleshooting. 
+              Stay tuned for exciting new content!
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white">
+                Advanced Security
+              </Badge>
+              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white">
+                Hardware Diagnostics
+              </Badge>
+              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white">
+                Enterprise Support
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
