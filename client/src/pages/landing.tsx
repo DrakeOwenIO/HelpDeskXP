@@ -97,9 +97,8 @@ export default function Landing() {
                   Start Free Course
                 </Button>
                 <Button 
-                  variant="outline"
                   onClick={handleGetStarted}
-                  className="btn-secondary px-8 py-4 text-lg"
+                  className="bg-white/20 text-white border-2 border-white px-8 py-4 text-lg font-semibold hover:bg-white hover:text-primary transition-colors"
                 >
                   View All Courses
                 </Button>
