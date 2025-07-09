@@ -61,7 +61,7 @@ export default function CreatePost() {
         description: "Your post has been created successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/forum/posts'] });
-      setLocation("/forums");
+      setLocation("/forum");
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -100,7 +100,7 @@ export default function CreatePost() {
             </p>
             <div className="flex gap-2 justify-center">
               <Button asChild variant="outline">
-                <Link href="/forums">Back to Forums</Link>
+                <Link href="/forum">Back to Forum</Link>
               </Button>
               <Button onClick={() => window.location.href = "/api/login"}>
                 Sign In
@@ -121,9 +121,9 @@ export default function CreatePost() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="sm" asChild>
-          <Link href="/forums">
+          <Link href="/forum">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Forums
+            Back to Forum
           </Link>
         </Button>
         <h1 className="text-2xl font-bold text-neutral-900">Create New Post</h1>
@@ -222,7 +222,7 @@ export default function CreatePost() {
 
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" asChild>
-                      <Link href="/forums">Cancel</Link>
+                      <Link href="/forum">Cancel</Link>
                     </Button>
                     <Button 
                       type="submit" 
