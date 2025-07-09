@@ -54,7 +54,7 @@ const categories = [
 ];
 
 export default function Forum() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -72,7 +72,7 @@ export default function Forum() {
   const { data: posts = [], isLoading } = useQuery<ForumPost[]>({
     queryKey: ['/api/forum/posts', selectedCategory],
     queryFn: () => {
-      const url = selectedCategory 
+      const url = selectedCategory && selectedCategory !== "all"
         ? `/api/forum/posts?category=${encodeURIComponent(selectedCategory)}`
         : '/api/forum/posts';
       return fetch(url).then(res => res.json());
@@ -238,7 +238,7 @@ export default function Forum() {
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
