@@ -146,7 +146,8 @@ The application follows a monorepo structure with clear separation between clien
 
 ## Recent Changes (July 2025)
 - **Homepage Restructure**: Transformed from multi-course catalog to single masterclass focus
-- **Business Model**: Changed from free/premium tiers to single fixed-price course ($97)
+- **Business Model**: Changed from free/premium tiers to single fixed-price course ($49)
 - **Course Content**: Focused on everyday computer usage and troubleshooting (task manager, printer setup, router access, etc.)
 - **Future Expansion**: Added "More courses coming soon" messaging for Advanced Security, Hardware Diagnostics, and Enterprise Support
 - **Admin Navigation**: Added back buttons to course and blog management pages for improved UX
+- **Landing Page Updates**: Moved "Enroll Now" CTA lower on page, reduced price from $97 to $49, simplified hero section

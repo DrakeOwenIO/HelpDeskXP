@@ -58,16 +58,16 @@ export default function Landing() {
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
-                  onClick={handleEnrollNow}
+                  onClick={handleGetStarted}
                   className="bg-white text-primary px-8 py-4 text-lg font-semibold hover:bg-neutral-100"
                 >
-                  Enroll Now - $97
+                  View Course Details
                 </Button>
                 <Button 
                   onClick={handleGetStarted}
                   className="bg-white/20 text-white border-2 border-white px-8 py-4 text-lg font-semibold hover:bg-white hover:text-primary transition-colors"
                 >
-                  View Course Details
+                  Learn More
                 </Button>
               </div>
             </div>
@@ -208,10 +208,10 @@ export default function Landing() {
             </Badge>
           </div>
           <Button 
-            onClick={handleGetStarted}
+            onClick={handleEnrollNow}
             className="bg-white text-blue-600 hover:bg-neutral-100 px-8 py-3 text-lg font-semibold"
           >
-            Get Started with Current Course
+            Enroll Now - $49
           </Button>
         </div>
       </section>
