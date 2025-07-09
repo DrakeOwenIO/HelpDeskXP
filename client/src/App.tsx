@@ -14,6 +14,9 @@ import ForumPost from "@/pages/forum-post";
 import CreatePost from "@/pages/create-post";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCourses from "@/pages/admin/courses";
+import Blog from "@/pages/blog";
+import BlogPost from "@/pages/blog-post";
+import BlogManagement from "@/pages/admin/blog-management";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,6 +29,8 @@ function Router() {
           <Route path="/forum" component={Forum} />
           <Route path="/forum/create" component={CreatePost} />
           <Route path="/forum/posts/:id" component={ForumPost} />
+          <Route path="/blog" component={Blog} />
+          <Route path="/blog/:id" component={BlogPost} />
           <Route path="/courses" component={Courses} />
           <Route path="/courses/:id" component={CourseDetail} />
         </>
@@ -37,8 +42,11 @@ function Router() {
           <Route path="/forum" component={Forum} />
           <Route path="/forum/create" component={CreatePost} />
           <Route path="/forum/posts/:id" component={ForumPost} />
+          <Route path="/blog" component={Blog} />
+          <Route path="/blog/:id" component={BlogPost} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/courses" component={AdminCourses} />
+          <Route path="/admin/blog" component={BlogManagement} />
         </>
       )}
       <Route component={NotFound} />

@@ -20,6 +20,12 @@ import {
   type InsertForumReply,
   type ForumVote,
   type InsertForumVote,
+  blogPosts,
+  type BlogPost,
+  type InsertBlogPost,
+  blogComments,
+  type BlogComment,
+  type InsertBlogComment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -68,6 +74,18 @@ export interface IStorage {
   voteOnPost(vote: InsertForumVote): Promise<ForumVote>;
   getUserVote(userId: string, postId?: number, replyId?: number): Promise<ForumVote | undefined>;
   removeVote(userId: string, postId?: number, replyId?: number): Promise<void>;
+  
+  // Blog operations
+  getBlogPosts(status?: string): Promise<(BlogPost & { authorName: string })[]>;
+  getBlogPost(id: number): Promise<(BlogPost & { authorName: string }) | undefined>;
+  getBlogPostBySlug(slug: string): Promise<(BlogPost & { authorName: string }) | undefined>;
+  createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
+  updateBlogPost(id: number, updates: Partial<InsertBlogPost>): Promise<BlogPost>;
+  deleteBlogPost(id: number): Promise<void>;
+  
+  getBlogComments(postId: number): Promise<(BlogComment & { authorName: string })[]>;
+  createBlogComment(comment: InsertBlogComment): Promise<BlogComment>;
+  deleteBlogComment(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -407,6 +425,124 @@ export class DatabaseStorage implements IStorage {
           .where(eq(forumReplies.id, existingVote.replyId));
       }
     }
+  }
+
+  // Blog operations
+  async getBlogPosts(status = "published"): Promise<(BlogPost & { authorName: string })[]> {
+    const posts = await db
+      .select({
+        id: blogPosts.id,
+        title: blogPosts.title,
+        slug: blogPosts.slug,
+        content: blogPosts.content,
+        excerpt: blogPosts.excerpt,
+        featuredImage: blogPosts.featuredImage,
+        authorId: blogPosts.authorId,
+        status: blogPosts.status,
+        publishedAt: blogPosts.publishedAt,
+        createdAt: blogPosts.createdAt,
+        updatedAt: blogPosts.updatedAt,
+        authorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`.as('authorName'),
+      })
+      .from(blogPosts)
+      .leftJoin(users, eq(blogPosts.authorId, users.id))
+      .where(eq(blogPosts.status, status))
+      .orderBy(desc(blogPosts.publishedAt));
+    
+    return posts;
+  }
+
+  async getBlogPost(id: number): Promise<(BlogPost & { authorName: string }) | undefined> {
+    const [post] = await db
+      .select({
+        id: blogPosts.id,
+        title: blogPosts.title,
+        slug: blogPosts.slug,
+        content: blogPosts.content,
+        excerpt: blogPosts.excerpt,
+        featuredImage: blogPosts.featuredImage,
+        authorId: blogPosts.authorId,
+        status: blogPosts.status,
+        publishedAt: blogPosts.publishedAt,
+        createdAt: blogPosts.createdAt,
+        updatedAt: blogPosts.updatedAt,
+        authorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`.as('authorName'),
+      })
+      .from(blogPosts)
+      .leftJoin(users, eq(blogPosts.authorId, users.id))
+      .where(eq(blogPosts.id, id));
+    
+    return post;
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<(BlogPost & { authorName: string }) | undefined> {
+    const [post] = await db
+      .select({
+        id: blogPosts.id,
+        title: blogPosts.title,
+        slug: blogPosts.slug,
+        content: blogPosts.content,
+        excerpt: blogPosts.excerpt,
+        featuredImage: blogPosts.featuredImage,
+        authorId: blogPosts.authorId,
+        status: blogPosts.status,
+        publishedAt: blogPosts.publishedAt,
+        createdAt: blogPosts.createdAt,
+        updatedAt: blogPosts.updatedAt,
+        authorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`.as('authorName'),
+      })
+      .from(blogPosts)
+      .leftJoin(users, eq(blogPosts.authorId, users.id))
+      .where(eq(blogPosts.slug, slug));
+    
+    return post;
+  }
+
+  async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
+    const [newPost] = await db.insert(blogPosts).values(post).returning();
+    return newPost;
+  }
+
+  async updateBlogPost(id: number, updates: Partial<InsertBlogPost>): Promise<BlogPost> {
+    const [updatedPost] = await db
+      .update(blogPosts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(blogPosts.id, id))
+      .returning();
+    return updatedPost;
+  }
+
+  async deleteBlogPost(id: number): Promise<void> {
+    await db.delete(blogPosts).where(eq(blogPosts.id, id));
+  }
+
+  async getBlogComments(postId: number): Promise<(BlogComment & { authorName: string })[]> {
+    const comments = await db
+      .select({
+        id: blogComments.id,
+        postId: blogComments.postId,
+        authorId: blogComments.authorId,
+        content: blogComments.content,
+        parentCommentId: blogComments.parentCommentId,
+        createdAt: blogComments.createdAt,
+        updatedAt: blogComments.updatedAt,
+        authorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`.as('authorName'),
+      })
+      .from(blogComments)
+      .leftJoin(users, eq(blogComments.authorId, users.id))
+      .where(eq(blogComments.postId, postId))
+      .orderBy(blogComments.createdAt);
+    
+    return comments;
+  }
+
+  async createBlogComment(comment: InsertBlogComment): Promise<BlogComment> {
+    const [newComment] = await db.insert(blogComments).values(comment).returning();
+    return newComment;
+  }
+
+  async deleteBlogComment(id: number): Promise<void> {
+    await db.delete(blogComments).where(eq(blogComments.id, id));
   }
 }
 

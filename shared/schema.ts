@@ -112,6 +112,31 @@ export const forumVotes = pgTable("forum_votes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Blog tables
+export const blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  content: text("content").notNull(),
+  excerpt: text("excerpt"), // Short description for previews
+  featuredImage: varchar("featured_image", { length: 500 }), // URL to featured image
+  authorId: varchar("author_id").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, published, archived
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const blogComments = pgTable("blog_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  authorId: varchar("author_id").notNull(),
+  content: text("content").notNull(),
+  parentCommentId: integer("parent_comment_id"), // For nested comments
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
@@ -132,6 +157,12 @@ export type InsertForumReply = typeof forumReplies.$inferInsert;
 
 export type ForumVote = typeof forumVotes.$inferSelect;
 export type InsertForumVote = typeof forumVotes.$inferInsert;
+
+export type BlogPost = typeof blogPosts.$inferSelect;
+export type InsertBlogPost = typeof blogPosts.$inferInsert;
+
+export type BlogComment = typeof blogComments.$inferSelect;
+export type InsertBlogComment = typeof blogComments.$inferInsert;
 
 export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
@@ -169,4 +200,16 @@ export const insertForumReplySchema = createInsertSchema(forumReplies).omit({
 export const insertForumVoteSchema = createInsertSchema(forumVotes).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBlogCommentSchema = createInsertSchema(blogComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });

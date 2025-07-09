@@ -105,9 +105,16 @@ export default function AdminDashboard() {
     {
       title: "Manage Courses",
       description: "Edit existing courses and content",
-      icon: FileText,
+      icon: BookOpen,
       href: "/admin/courses",
       color: "bg-secondary"
+    },
+    {
+      title: "Blog Management",
+      description: "Create and manage blog posts",
+      icon: FileText,
+      href: "/admin/blog",
+      color: "bg-purple-500"
     },
     {
       title: "View Analytics",
@@ -115,13 +122,6 @@ export default function AdminDashboard() {
       icon: BarChart3,
       href: "/admin/analytics",
       color: "bg-accent"
-    },
-    {
-      title: "Platform Settings",
-      description: "Configure platform settings",
-      icon: Settings,
-      href: "/admin/settings",
-      color: "bg-purple-500"
     }
   ];
 

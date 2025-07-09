@@ -15,14 +15,15 @@ export default function Navigation() {
   const navLinks = [
     { href: "/courses", label: "Courses" },
     { href: "/forum", label: "Forums" },
+    { href: "/blog", label: "Blog" },
     { href: "/about", label: "About" },
-    { href: "/support", label: "Support" },
   ];
 
   const authenticatedNavLinks = [
     { href: "/", label: "Dashboard" },
     { href: "/courses", label: "Courses" },
     { href: "/forum", label: "Forums" },
+    { href: "/blog", label: "Blog" },
     { href: "/profile", label: "Profile" },
   ];
 
