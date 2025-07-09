@@ -8,18 +8,18 @@ export default function Landing() {
   const courseHighlights = [
     {
       icon: Computer,
-      title: "Task Manager Mastery",
-      description: "Learn to monitor and manage system processes, troubleshoot performance issues, and optimize your computer's performance.",
+      title: "Speed Up a Slow Computer",
+      description: "Learn how to fix common issues that make your computer sluggish—no tech skills required. You'll be able to make things run faster and smoother with a few simple steps.",
     },
     {
       icon: Settings,
-      title: "Printer Setup & Troubleshooting",
-      description: "Connect and configure printers with confidence, solve common printing problems, and maintain your devices.",
+      title: "Set Up Devices Without the Headache",
+      description: "Get printers, monitors, and other accessories working without frustration. You'll learn the basic steps to connect and troubleshoot devices confidently.",
     },
     {
       icon: Shield,
-      title: "Router Configuration",
-      description: "Access and manage your home network settings, secure your WiFi, and troubleshoot connectivity issues.",
+      title: "Stay Connected and Protected",
+      description: "Understand the basics of staying online and keeping your computer safe. Whether it's fixing a Wi-Fi issue or avoiding sketchy software, you'll know what to do.",
     }
   ];
 
