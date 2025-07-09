@@ -329,7 +329,12 @@ export default function Forum() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4" />
-                      <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                      <span>
+                        {post.createdAt && !isNaN(new Date(post.createdAt).getTime()) 
+                          ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
+                          : "Recently"
+                        }
+                      </span>
                     </div>
                   </div>
                 </CardContent>

@@ -66,15 +66,25 @@ export default function ForumPost() {
 
   const { data: post, isLoading: postLoading } = useQuery<ForumPost>({
     queryKey: ['/api/forum/posts', id],
-    queryFn: () => apiRequest("GET", `/api/forum/posts/${id}`),
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/forum/posts/${id}`);
+      return response.json();
+    },
     enabled: !!id,
   });
 
-  const { data: replies = [], isLoading: repliesLoading } = useQuery<ForumReply[]>({
+  const { data: repliesData, isLoading: repliesLoading } = useQuery<ForumReply[]>({
     queryKey: ['/api/forum/posts', id, 'replies'],
-    queryFn: () => apiRequest("GET", `/api/forum/posts/${id}/replies`),
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/forum/posts/${id}/replies`);
+      return response.json();
+    },
     enabled: !!id,
   });
+
+  const replies = Array.isArray(repliesData) ? repliesData : [];
+  
+
 
   const voteOnPostMutation = useMutation({
     mutationFn: async ({ postId, voteType }: { postId: number; voteType: string }) => {
@@ -302,7 +312,12 @@ export default function ForumPost() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                <span>
+                  {post.createdAt && !isNaN(new Date(post.createdAt).getTime()) 
+                    ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
+                    : "Recently"
+                  }
+                </span>
               </div>
             </div>
           </CardContent>
@@ -383,7 +398,7 @@ export default function ForumPost() {
               <MessageSquare className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
               <h4 className="text-lg font-medium text-neutral-900 mb-2">No replies yet</h4>
               <p className="text-neutral-600 mb-4">Be the first to share your thoughts!</p>
-              {!post.isLocked && (
+              {post && !post.isLocked && (
                 <Button onClick={handleReply}>Write Reply</Button>
               )}
             </CardContent>
@@ -399,7 +414,12 @@ export default function ForumPost() {
                       <span>{reply.authorName}</span>
                       <span>•</span>
                       <Clock className="w-4 h-4" />
-                      <span>{formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}</span>
+                      <span>
+                        {reply.createdAt && !isNaN(new Date(reply.createdAt).getTime()) 
+                          ? formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })
+                          : "Recently"
+                        }
+                      </span>
                     </div>
                     <Button
                       variant="outline"
