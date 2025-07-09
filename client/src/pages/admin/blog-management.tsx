@@ -12,9 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Edit, Trash2, Calendar, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Eye, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 interface BlogPost {
   id: number;
@@ -177,7 +178,20 @@ export default function BlogManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-neutral-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link href="/admin">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Admin Dashboard
+            </Button>
+          </Link>
+        </div>
+
+        <div className="space-y-6">
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -443,6 +457,8 @@ export default function BlogManagement() {
           ))}
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

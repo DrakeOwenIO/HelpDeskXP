@@ -16,11 +16,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertCourseSchema, type Course, type InsertCourse } from "@shared/schema";
 import { z } from "zod";
+import { Link } from "wouter";
 
 const courseFormSchema = insertCourseSchema.extend({
   learningObjectives: z.string().transform((val) => val.split('\n').filter(Boolean)),
@@ -248,6 +249,16 @@ export default function AdminCourses() {
       <Navigation />
       
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link href="/admin">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Admin Dashboard
+            </Button>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
