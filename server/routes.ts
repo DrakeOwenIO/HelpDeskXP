@@ -232,6 +232,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Forum routes - public access for reading
+  app.get("/api/forum/posts", async (req, res) => {
+    try {
+      const category = req.query.category as string;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const posts = await storage.getForumPosts(category, limit);
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching forum posts:", error);
+      res.status(500).json({ message: "Failed to fetch forum posts" });
+    }
+  });
+
+  app.get("/api/forum/posts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const post = await storage.getForumPost(id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching forum post:", error);
+      res.status(500).json({ message: "Failed to fetch forum post" });
+    }
+  });
+
+  app.get("/api/forum/posts/:id/replies", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const replies = await storage.getForumReplies(postId);
+      res.json(replies);
+    } catch (error) {
+      console.error("Error fetching replies:", error);
+      res.status(500).json({ message: "Failed to fetch replies" });
+    }
+  });
+
+  // Forum routes - require authentication for posting/voting
+  app.post("/api/forum/posts", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postData = { ...req.body, authorId: userId };
+      const post = await storage.createForumPost(postData);
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating forum post:", error);
+      res.status(500).json({ message: "Failed to create forum post" });
+    }
+  });
+
+  app.post("/api/forum/posts/:id/replies", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postId = parseInt(req.params.id);
+      const replyData = { ...req.body, authorId: userId, postId };
+      const reply = await storage.createForumReply(replyData);
+      res.json(reply);
+    } catch (error) {
+      console.error("Error creating reply:", error);
+      res.status(500).json({ message: "Failed to create reply" });
+    }
+  });
+
+  app.post("/api/forum/vote", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const voteData = { ...req.body, userId };
+      const vote = await storage.voteOnPost(voteData);
+      res.json(vote);
+    } catch (error) {
+      console.error("Error voting:", error);
+      res.status(500).json({ message: "Failed to vote" });
+    }
+  });
+
+  app.get("/api/forum/vote/:postId?/:replyId?", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postId = req.params.postId ? parseInt(req.params.postId) : undefined;
+      const replyId = req.params.replyId ? parseInt(req.params.replyId) : undefined;
+      const vote = await storage.getUserVote(userId, postId, replyId);
+      res.json(vote || null);
+    } catch (error) {
+      console.error("Error fetching user vote:", error);
+      res.status(500).json({ message: "Failed to fetch user vote" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

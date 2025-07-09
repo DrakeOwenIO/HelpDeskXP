@@ -45,6 +45,14 @@ Preferred communication style: Simple, everyday language.
 - Course enrollment and progress tracking
 - Purchase system for premium content
 
+### Community Forum System
+- Public forum access for reading posts and replies
+- User authentication required for creating posts, replies, and voting
+- Category-based organization (General, Hardware, Software, Security, Networking, Mobile Devices, Troubleshooting)
+- Upvoting system for posts and replies
+- Real-time reply count and vote tracking
+- Sticky posts and content moderation features
+
 ### User Interface
 - Responsive design with mobile-first approach
 - Dark/light theme support via CSS variables
@@ -72,6 +80,14 @@ Preferred communication style: Simple, everyday language.
 3. Premium courses require purchase
 4. Enrollment creates progress tracking records
 5. Progress updates sync to database
+
+### Forum Interaction Flow
+1. Anyone can read forum posts and replies without signing in
+2. Creating posts and replies requires user authentication
+3. Voting on posts/replies requires authentication
+4. Posts organized by categories with filtering options
+5. Real-time vote counts and reply tracking
+6. Automatic user redirection to login when authentication needed
 
 ### Data Persistence
 - All user data stored in PostgreSQL

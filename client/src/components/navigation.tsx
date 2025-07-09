@@ -14,7 +14,7 @@ export default function Navigation() {
 
   const navLinks = [
     { href: "/courses", label: "Courses" },
-    { href: "/free", label: "Free Training" },
+    { href: "/forum", label: "Forums" },
     { href: "/about", label: "About" },
     { href: "/support", label: "Support" },
   ];
@@ -22,6 +22,7 @@ export default function Navigation() {
   const authenticatedNavLinks = [
     { href: "/", label: "Dashboard" },
     { href: "/courses", label: "Courses" },
+    { href: "/forum", label: "Forums" },
     { href: "/profile", label: "Profile" },
   ];
 

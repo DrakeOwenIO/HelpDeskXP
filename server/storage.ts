@@ -3,6 +3,9 @@ import {
   courses,
   enrollments,
   purchases,
+  forumPosts,
+  forumReplies,
+  forumVotes,
   type User,
   type UpsertUser,
   type Course,
@@ -11,6 +14,12 @@ import {
   type InsertEnrollment,
   type Purchase,
   type InsertPurchase,
+  type ForumPost,
+  type InsertForumPost,
+  type ForumReply,
+  type InsertForumReply,
+  type ForumVote,
+  type InsertForumVote,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -43,6 +52,22 @@ export interface IStorage {
   createPurchase(purchase: InsertPurchase): Promise<Purchase>;
   getUserPurchases(userId: string): Promise<Purchase[]>;
   hasPurchased(userId: string, courseId: number): Promise<boolean>;
+  
+  // Forum operations
+  getForumPosts(category?: string, limit?: number): Promise<(ForumPost & { authorName: string })[]>;
+  getForumPost(id: number): Promise<(ForumPost & { authorName: string }) | undefined>;
+  createForumPost(post: InsertForumPost): Promise<ForumPost>;
+  updateForumPost(id: number, updates: Partial<InsertForumPost>): Promise<ForumPost>;
+  deleteForumPost(id: number): Promise<void>;
+  
+  getForumReplies(postId: number): Promise<(ForumReply & { authorName: string })[]>;
+  createForumReply(reply: InsertForumReply): Promise<ForumReply>;
+  updateForumReply(id: number, updates: Partial<InsertForumReply>): Promise<ForumReply>;
+  deleteForumReply(id: number): Promise<void>;
+  
+  voteOnPost(vote: InsertForumVote): Promise<ForumVote>;
+  getUserVote(userId: string, postId?: number, replyId?: number): Promise<ForumVote | undefined>;
+  removeVote(userId: string, postId?: number, replyId?: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -183,6 +208,205 @@ export class DatabaseStorage implements IStorage {
       .from(purchases)
       .where(and(eq(purchases.userId, userId), eq(purchases.courseId, courseId)));
     return !!purchase;
+  }
+
+  // Forum operations
+  async getForumPosts(category?: string, limit = 50): Promise<(ForumPost & { authorName: string })[]> {
+    const query = db
+      .select({
+        id: forumPosts.id,
+        title: forumPosts.title,
+        content: forumPosts.content,
+        authorId: forumPosts.authorId,
+        category: forumPosts.category,
+        upvotes: forumPosts.upvotes,
+        replyCount: forumPosts.replyCount,
+        isSticky: forumPosts.isSticky,
+        isLocked: forumPosts.isLocked,
+        createdAt: forumPosts.createdAt,
+        updatedAt: forumPosts.updatedAt,
+        authorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`.as('authorName'),
+      })
+      .from(forumPosts)
+      .leftJoin(users, eq(forumPosts.authorId, users.id));
+
+    if (category) {
+      query.where(eq(forumPosts.category, category));
+    }
+
+    return await query
+      .orderBy(desc(forumPosts.isSticky), desc(forumPosts.createdAt))
+      .limit(limit);
+  }
+
+  async getForumPost(id: number): Promise<(ForumPost & { authorName: string }) | undefined> {
+    const [post] = await db
+      .select({
+        id: forumPosts.id,
+        title: forumPosts.title,
+        content: forumPosts.content,
+        authorId: forumPosts.authorId,
+        category: forumPosts.category,
+        upvotes: forumPosts.upvotes,
+        replyCount: forumPosts.replyCount,
+        isSticky: forumPosts.isSticky,
+        isLocked: forumPosts.isLocked,
+        createdAt: forumPosts.createdAt,
+        updatedAt: forumPosts.updatedAt,
+        authorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`.as('authorName'),
+      })
+      .from(forumPosts)
+      .leftJoin(users, eq(forumPosts.authorId, users.id))
+      .where(eq(forumPosts.id, id));
+    
+    return post;
+  }
+
+  async createForumPost(post: InsertForumPost): Promise<ForumPost> {
+    const [newPost] = await db.insert(forumPosts).values(post).returning();
+    return newPost;
+  }
+
+  async updateForumPost(id: number, updates: Partial<InsertForumPost>): Promise<ForumPost> {
+    const [updatedPost] = await db
+      .update(forumPosts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(forumPosts.id, id))
+      .returning();
+    return updatedPost;
+  }
+
+  async deleteForumPost(id: number): Promise<void> {
+    await db.delete(forumReplies).where(eq(forumReplies.postId, id));
+    await db.delete(forumVotes).where(eq(forumVotes.postId, id));
+    await db.delete(forumPosts).where(eq(forumPosts.id, id));
+  }
+
+  async getForumReplies(postId: number): Promise<(ForumReply & { authorName: string })[]> {
+    return await db
+      .select({
+        id: forumReplies.id,
+        postId: forumReplies.postId,
+        content: forumReplies.content,
+        authorId: forumReplies.authorId,
+        upvotes: forumReplies.upvotes,
+        parentReplyId: forumReplies.parentReplyId,
+        createdAt: forumReplies.createdAt,
+        updatedAt: forumReplies.updatedAt,
+        authorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`.as('authorName'),
+      })
+      .from(forumReplies)
+      .leftJoin(users, eq(forumReplies.authorId, users.id))
+      .where(eq(forumReplies.postId, postId))
+      .orderBy(forumReplies.createdAt);
+  }
+
+  async createForumReply(reply: InsertForumReply): Promise<ForumReply> {
+    const [newReply] = await db.insert(forumReplies).values(reply).returning();
+    
+    // Update reply count
+    await db
+      .update(forumPosts)
+      .set({ replyCount: sql`${forumPosts.replyCount} + 1` })
+      .where(eq(forumPosts.id, reply.postId));
+    
+    return newReply;
+  }
+
+  async updateForumReply(id: number, updates: Partial<InsertForumReply>): Promise<ForumReply> {
+    const [updatedReply] = await db
+      .update(forumReplies)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(forumReplies.id, id))
+      .returning();
+    return updatedReply;
+  }
+
+  async deleteForumReply(id: number): Promise<void> {
+    const [reply] = await db.select().from(forumReplies).where(eq(forumReplies.id, id));
+    if (reply) {
+      await db.delete(forumVotes).where(eq(forumVotes.replyId, id));
+      await db.delete(forumReplies).where(eq(forumReplies.id, id));
+      
+      // Update reply count
+      await db
+        .update(forumPosts)
+        .set({ replyCount: sql`${forumPosts.replyCount} - 1` })
+        .where(eq(forumPosts.id, reply.postId));
+    }
+  }
+
+  async voteOnPost(vote: InsertForumVote): Promise<ForumVote> {
+    // Remove existing vote first
+    if (vote.postId) {
+      await this.removeVote(vote.userId, vote.postId);
+    } else if (vote.replyId) {
+      await this.removeVote(vote.userId, undefined, vote.replyId);
+    }
+
+    const [newVote] = await db.insert(forumVotes).values(vote).returning();
+    
+    // Update vote count
+    if (vote.postId) {
+      const increment = vote.voteType === 'upvote' ? 1 : -1;
+      await db
+        .update(forumPosts)
+        .set({ upvotes: sql`${forumPosts.upvotes} + ${increment}` })
+        .where(eq(forumPosts.id, vote.postId));
+    } else if (vote.replyId) {
+      const increment = vote.voteType === 'upvote' ? 1 : -1;
+      await db
+        .update(forumReplies)
+        .set({ upvotes: sql`${forumReplies.upvotes} + ${increment}` })
+        .where(eq(forumReplies.id, vote.replyId));
+    }
+    
+    return newVote;
+  }
+
+  async getUserVote(userId: string, postId?: number, replyId?: number): Promise<ForumVote | undefined> {
+    let whereCondition;
+    if (postId) {
+      whereCondition = and(eq(forumVotes.userId, userId), eq(forumVotes.postId, postId));
+    } else if (replyId) {
+      whereCondition = and(eq(forumVotes.userId, userId), eq(forumVotes.replyId, replyId));
+    } else {
+      return undefined;
+    }
+
+    const [vote] = await db.select().from(forumVotes).where(whereCondition);
+    return vote;
+  }
+
+  async removeVote(userId: string, postId?: number, replyId?: number): Promise<void> {
+    let whereCondition;
+    if (postId) {
+      whereCondition = and(eq(forumVotes.userId, userId), eq(forumVotes.postId, postId));
+    } else if (replyId) {
+      whereCondition = and(eq(forumVotes.userId, userId), eq(forumVotes.replyId, replyId));
+    } else {
+      return;
+    }
+
+    const [existingVote] = await db.select().from(forumVotes).where(whereCondition);
+    if (existingVote) {
+      await db.delete(forumVotes).where(whereCondition);
+      
+      // Update vote count
+      if (existingVote.postId) {
+        const decrement = existingVote.voteType === 'upvote' ? -1 : 1;
+        await db
+          .update(forumPosts)
+          .set({ upvotes: sql`${forumPosts.upvotes} + ${decrement}` })
+          .where(eq(forumPosts.id, existingVote.postId));
+      } else if (existingVote.replyId) {
+        const decrement = existingVote.voteType === 'upvote' ? -1 : 1;
+        await db
+          .update(forumReplies)
+          .set({ upvotes: sql`${forumReplies.upvotes} + ${decrement}` })
+          .where(eq(forumReplies.id, existingVote.replyId));
+      }
+    }
   }
 }
 

@@ -9,6 +9,8 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
 import CourseDetail from "@/pages/course-detail";
+import Forum from "@/pages/forum";
+import ForumPost from "@/pages/forum-post";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCourses from "@/pages/admin/courses";
 
@@ -18,12 +20,20 @@ function Router() {
   return (
     <Switch>
       {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/forum" component={Forum} />
+          <Route path="/forum/posts/:id" component={ForumPost} />
+          <Route path="/courses" component={Courses} />
+          <Route path="/courses/:id" component={CourseDetail} />
+        </>
       ) : (
         <>
           <Route path="/" component={Home} />
           <Route path="/courses" component={Courses} />
           <Route path="/courses/:id" component={CourseDetail} />
+          <Route path="/forum" component={Forum} />
+          <Route path="/forum/posts/:id" component={ForumPost} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/courses" component={AdminCourses} />
         </>

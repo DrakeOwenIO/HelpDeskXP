@@ -78,6 +78,40 @@ export const purchases = pgTable("purchases", {
   purchasedAt: timestamp("purchased_at").defaultNow(),
 });
 
+export const forumPosts = pgTable("forum_posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  authorId: varchar("author_id").notNull(),
+  category: varchar("category", { length: 100 }).default("General"),
+  upvotes: integer("upvotes").default(0),
+  replyCount: integer("reply_count").default(0),
+  isSticky: boolean("is_sticky").default(false),
+  isLocked: boolean("is_locked").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const forumReplies = pgTable("forum_replies", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  content: text("content").notNull(),
+  authorId: varchar("author_id").notNull(),
+  upvotes: integer("upvotes").default(0),
+  parentReplyId: integer("parent_reply_id"), // For nested replies
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const forumVotes = pgTable("forum_votes", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  postId: integer("post_id"),
+  replyId: integer("reply_id"),
+  voteType: varchar("vote_type", { length: 10 }).notNull(), // 'upvote' or 'downvote'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
@@ -89,6 +123,15 @@ export type InsertEnrollment = typeof enrollments.$inferInsert;
 
 export type Purchase = typeof purchases.$inferSelect;
 export type InsertPurchase = typeof purchases.$inferInsert;
+
+export type ForumPost = typeof forumPosts.$inferSelect;
+export type InsertForumPost = typeof forumPosts.$inferInsert;
+
+export type ForumReply = typeof forumReplies.$inferSelect;
+export type InsertForumReply = typeof forumReplies.$inferInsert;
+
+export type ForumVote = typeof forumVotes.$inferSelect;
+export type InsertForumVote = typeof forumVotes.$inferInsert;
 
 export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
@@ -106,4 +149,24 @@ export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({
 export const insertPurchaseSchema = createInsertSchema(purchases).omit({
   id: true,
   purchasedAt: true,
+});
+
+export const insertForumPostSchema = createInsertSchema(forumPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  upvotes: true,
+  replyCount: true,
+});
+
+export const insertForumReplySchema = createInsertSchema(forumReplies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  upvotes: true,
+});
+
+export const insertForumVoteSchema = createInsertSchema(forumVotes).omit({
+  id: true,
+  createdAt: true,
 });
