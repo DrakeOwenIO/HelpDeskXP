@@ -48,7 +48,7 @@ export default function Landing() {
                 Everyday Tech Fixes: Basic Computer Skills for Real Life
               </h1>
               <p className="text-xl text-blue-100 mb-8 leading-relaxed">
-                Learn essential computer skills including task manager usage, printer setup, router configuration, and everyday troubleshooting. Perfect for building confidence with technology.
+                Struggling with slow computers, setup issues, or random tech headaches? This beginner-friendly course teaches you how to solve the most common computer problems without needing to call for help. From speeding up your system to connecting printers and fixing internet issues, you'll gain the confidence to handle everyday tech challenges on your own—no experience required.
               </p>
               <div className="flex items-center gap-6 mb-8">
                 <div className="flex items-center text-white">
