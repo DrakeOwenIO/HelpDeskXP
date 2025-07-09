@@ -11,6 +11,7 @@ import Courses from "@/pages/courses";
 import CourseDetail from "@/pages/course-detail";
 import Forum from "@/pages/forum";
 import ForumPost from "@/pages/forum-post";
+import CreatePost from "@/pages/create-post";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCourses from "@/pages/admin/courses";
 
@@ -23,6 +24,7 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/forum" component={Forum} />
+          <Route path="/forum/create" component={CreatePost} />
           <Route path="/forum/posts/:id" component={ForumPost} />
           <Route path="/courses" component={Courses} />
           <Route path="/courses/:id" component={CourseDetail} />
@@ -33,6 +35,7 @@ function Router() {
           <Route path="/courses" component={Courses} />
           <Route path="/courses/:id" component={CourseDetail} />
           <Route path="/forum" component={Forum} />
+          <Route path="/forum/create" component={CreatePost} />
           <Route path="/forum/posts/:id" component={ForumPost} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/courses" component={AdminCourses} />

@@ -35,13 +35,7 @@ interface ForumPost {
   updatedAt: string;
 }
 
-const postFormSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters"),
-  category: z.string().min(1, "Please select a category"),
-});
 
-type PostFormData = z.infer<typeof postFormSchema>;
 
 const categories = [
   "General",
@@ -79,57 +73,7 @@ export default function Forum() {
     },
   });
 
-  const createPostMutation = useMutation({
-    mutationFn: async (data: PostFormData) => {
-      return await apiRequest("POST", "/api/forum/posts", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/forum/posts'] });
-      setIsCreateDialogOpen(false);
-      form.reset();
-      toast({
-        title: "Success",
-        description: "Your post has been created successfully!",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You need to sign in to create posts. Redirecting...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 1500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to create post. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const onSubmit = (data: PostFormData) => {
-    createPostMutation.mutate(data);
-  };
-
-  const handleCreatePost = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Sign In Required",
-        description: "You need to sign in to create posts. Redirecting...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 1500);
-      return;
-    }
-    setIsCreateDialogOpen(true);
-  };
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -142,89 +86,12 @@ export default function Forum() {
               Share knowledge, ask questions, and connect with other tech support learners
             </p>
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleCreatePost} className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                New Post
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Post</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your post title..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Content</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Share your question, experience, or knowledge..."
-                            rows={6}
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={createPostMutation.isPending}>
-                      {createPostMutation.isPending ? "Creating..." : "Create Post"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          <Button asChild className="flex items-center gap-2">
+            <Link href="/forum/create">
+              <Plus className="w-4 h-4" />
+              New Post
+            </Link>
+          </Button>
         </div>
 
         {/* Filters */}
@@ -275,7 +142,9 @@ export default function Forum() {
                   : "Be the first to start a conversation!"
                 }
               </p>
-              <Button onClick={handleCreatePost}>Create First Post</Button>
+              <Button asChild>
+                <Link href="/forum/create">Create First Post</Link>
+              </Button>
             </CardContent>
           </Card>
         ) : (

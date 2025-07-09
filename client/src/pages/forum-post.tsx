@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
@@ -14,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { MessageSquare, ThumbsUp, Clock, User, ArrowLeft, Reply } from "lucide-react";
+import { MessageSquare, ThumbsUp, Clock, User, ArrowLeft, Reply, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface ForumPost {
@@ -48,12 +52,31 @@ const replyFormSchema = z.object({
   content: z.string().min(5, "Reply must be at least 5 characters"),
 });
 
+const editPostFormSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters").max(200, "Title cannot exceed 200 characters"),
+  content: z.string().min(20, "Content must be at least 20 characters"),
+  category: z.string().min(1, "Please select a category"),
+});
+
 type ReplyFormData = z.infer<typeof replyFormSchema>;
+type EditPostFormData = z.infer<typeof editPostFormSchema>;
+
+const categories = [
+  "General",
+  "Hardware",
+  "Software", 
+  "Security",
+  "Networking",
+  "Mobile Devices",
+  "Troubleshooting"
+];
 
 export default function ForumPost() {
   const { id } = useParams<{ id: string }>();
+  const [, setLocation] = useLocation();
   const [showReplyForm, setShowReplyForm] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -61,6 +84,15 @@ export default function ForumPost() {
     resolver: zodResolver(replyFormSchema),
     defaultValues: {
       content: "",
+    },
+  });
+
+  const editForm = useForm<EditPostFormData>({
+    resolver: zodResolver(editPostFormSchema),
+    defaultValues: {
+      title: "",
+      content: "",
+      category: "",
     },
   });
 
@@ -176,6 +208,67 @@ export default function ForumPost() {
     },
   });
 
+  const editPostMutation = useMutation({
+    mutationFn: async (data: EditPostFormData) => {
+      const response = await apiRequest("PUT", `/api/forum/posts/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/forum/posts', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/forum/posts'] });
+      setIsEditDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Your post has been updated!",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You can only edit your own posts.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update post. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", `/api/forum/posts/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/forum/posts'] });
+      toast({
+        title: "Success",
+        description: "Post deleted successfully.",
+      });
+      setLocation('/forum');
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You can only delete your own posts.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleVotePost = (voteType: string) => {
     if (!isAuthenticated) {
       toast({
@@ -224,6 +317,28 @@ export default function ForumPost() {
   const onSubmit = (data: ReplyFormData) => {
     createReplyMutation.mutate(data);
   };
+
+  const onEditSubmit = (data: EditPostFormData) => {
+    editPostMutation.mutate(data);
+  };
+
+  const handleEditPost = () => {
+    if (post) {
+      editForm.reset({
+        title: post.title,
+        content: post.content,
+        category: post.category,
+      });
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleDeletePost = () => {
+    deletePostMutation.mutate();
+  };
+
+  // Check if current user is the author of the post
+  const isPostAuthor = user && post && user.id === post.authorId;
 
   if (postLoading) {
     return (
@@ -296,6 +411,117 @@ export default function ForumPost() {
                   <ThumbsUp className="w-4 h-4" />
                   {post.upvotes}
                 </Button>
+                {isPostAuthor && (
+                  <div className="flex items-center gap-1">
+                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={handleEditPost}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[600px]">
+                        <DialogHeader>
+                          <DialogTitle>Edit Post</DialogTitle>
+                        </DialogHeader>
+                        <Form {...editForm}>
+                          <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                            <FormField
+                              control={editForm.control}
+                              name="category"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Category</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select a category" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {categories.map((category) => (
+                                        <SelectItem key={category} value={category}>
+                                          {category}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editForm.control}
+                              name="title"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Title</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter your post title..." {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editForm.control}
+                              name="content"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Content</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="Share your question, experience, or knowledge..."
+                                      rows={8}
+                                      {...field} 
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsEditDialogOpen(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button type="submit" disabled={editPostMutation.isPending}>
+                                {editPostMutation.isPending ? "Updating..." : "Update Post"}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this post? This action cannot be undone and will also delete all replies to this post.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDeletePost}
+                            disabled={deletePostMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            {deletePostMutation.isPending ? "Deleting..." : "Delete Post"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
               </div>
             </div>
             <CardTitle className="text-2xl">{post.title}</CardTitle>
