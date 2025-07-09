@@ -185,6 +185,23 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Call to Action Section */}
+      <section className="py-16 bg-gradient-to-r from-green-600 to-blue-600 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Start Learning Today!</h2>
+          <h3 className="text-xl md:text-2xl font-semibold mb-6 text-green-100">Master Everyday Tech with Ease</h3>
+          <p className="text-lg text-green-100 mb-8 max-w-2xl mx-auto">
+            Enroll in our step-by-step beginner course to learn general troubleshooting, fixing Wi-Fi issues, and more!
+          </p>
+          <Button 
+            onClick={handleEnrollNow}
+            className="bg-white text-green-600 hover:bg-neutral-100 px-10 py-4 text-xl font-semibold shadow-lg"
+          >
+            Enroll Now - $49
+          </Button>
+        </div>
+      </section>
+
       {/* Coming Soon Banner */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -208,10 +225,10 @@ export default function Landing() {
             </Badge>
           </div>
           <Button 
-            onClick={handleEnrollNow}
+            onClick={handleGetStarted}
             className="bg-white text-blue-600 hover:bg-neutral-100 px-8 py-3 text-lg font-semibold"
           >
-            Enroll Now - $49
+            Get Notified
           </Button>
         </div>
       </section>
