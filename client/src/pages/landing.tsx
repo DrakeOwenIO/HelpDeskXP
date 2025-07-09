@@ -2,67 +2,24 @@ import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import MembershipCards from "@/components/membership-cards";
-import { Computer, Shield, Settings, Clock, Users, Star } from "lucide-react";
+import { Computer, Shield, Settings, Clock, Users, Star, CheckCircle, Play, Calendar, BookOpen, Award } from "lucide-react";
 
 export default function Landing() {
-  const categories = [
+  const courseHighlights = [
     {
       icon: Computer,
-      title: "Hardware Basics",
-      description: "Learn to identify and fix common hardware issues like slow performance, connectivity problems, and basic maintenance.",
-      courseCount: "8 Courses • Free & Premium",
-      color: "bg-primary"
-    },
-    {
-      icon: Shield,
-      title: "Security & Safety", 
-      description: "Protect yourself from viruses, scams, and online threats with practical security practices and tools.",
-      courseCount: "12 Courses • Free & Premium",
-      color: "bg-secondary"
+      title: "Task Manager Mastery",
+      description: "Learn to monitor and manage system processes, troubleshoot performance issues, and optimize your computer's performance.",
     },
     {
       icon: Settings,
-      title: "Software Solutions",
-      description: "Troubleshoot software crashes, installation issues, and optimize your programs for better performance.",
-      courseCount: "15 Courses • Free & Premium", 
-      color: "bg-accent"
-    }
-  ];
-
-  const featuredCourses = [
-    {
-      id: 1,
-      title: "Computer Running Slow? Quick Fixes",
-      description: "Learn the most common reasons your computer slows down and simple steps to speed it up again.",
-      duration: "45 min",
-      level: "Beginner",
-      students: "12,450 students",
-      price: null,
-      isFree: true,
-      image: "https://images.unsplash.com/photo-1588508065123-287b28e013da?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
+      title: "Printer Setup & Troubleshooting",
+      description: "Connect and configure printers with confidence, solve common printing problems, and maintain your devices.",
     },
     {
-      id: 2,
-      title: "Understanding Error Messages",
-      description: "Decode common error messages and learn step-by-step solutions to fix them yourself.",
-      duration: "2.5 hours",
-      level: "Beginner", 
-      students: "8,230 students",
-      price: "$29",
-      isFree: false,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
-    },
-    {
-      id: 3,
-      title: "Essential Computer Security",
-      description: "Protect your computer and personal information with practical security measures and safe browsing habits.",
-      duration: "3 hours",
-      level: "Beginner",
-      students: "15,680 students", 
-      price: "$39",
-      isFree: false,
-      image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
+      icon: Shield,
+      title: "Router Configuration",
+      description: "Access and manage your home network settings, secure your WiFi, and troubleshoot connectivity issues.",
     }
   ];
 
@@ -70,7 +27,7 @@ export default function Landing() {
     window.location.href = "/api/login";
   };
 
-  const handleStartFreeCourse = () => {
+  const handleEnrollNow = () => {
     window.location.href = "/api/login";
   };
 
@@ -83,60 +40,85 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
+              <Badge className="bg-white/20 text-white mb-6">
+                <Star className="w-3 h-3 mr-1" />
+                Featured Masterclass
+              </Badge>
               <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
-                Learn Tech Support Skills at Your Own Pace
+                Master Everyday Computer Skills & Troubleshooting
               </h1>
               <p className="text-xl text-blue-100 mb-8 leading-relaxed">
-                Master computer troubleshooting with our step-by-step courses designed for everyday users. No technical background required.
+                Learn essential computer skills including task manager usage, printer setup, router configuration, and everyday troubleshooting. Perfect for building confidence with technology.
               </p>
+              <div className="flex items-center gap-6 mb-8">
+                <div className="flex items-center text-white">
+                  <Clock className="w-5 h-5 mr-2" />
+                  <span>8+ hours of content</span>
+                </div>
+                <div className="flex items-center text-white">
+                  <Users className="w-5 h-5 mr-2" />
+                  <span>1,200+ students</span>
+                </div>
+                <div className="flex items-center text-white">
+                  <Award className="w-5 h-5 mr-2" />
+                  <span>Certificate included</span>
+                </div>
+              </div>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
-                  onClick={handleStartFreeCourse}
+                  onClick={handleEnrollNow}
                   className="bg-white text-primary px-8 py-4 text-lg font-semibold hover:bg-neutral-100"
                 >
-                  Start Free Course
+                  Enroll Now - $97
                 </Button>
                 <Button 
                   onClick={handleGetStarted}
                   className="bg-white/20 text-white border-2 border-white px-8 py-4 text-lg font-semibold hover:bg-white hover:text-primary transition-colors"
                 >
-                  View All Courses
+                  View Course Details
                 </Button>
               </div>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden md:block relative">
               <img 
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" 
-                alt="Person learning computer skills" 
+                src="https://images.unsplash.com/photo-1588508065123-287b28e013da?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" 
+                alt="Computer troubleshooting and support" 
                 className="rounded-2xl shadow-2xl w-full"
               />
+              <div className="absolute inset-0 bg-black bg-opacity-30 rounded-2xl flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Play className="w-8 h-8 text-white ml-1" />
+                  </div>
+                  <p className="text-white text-sm">Watch Preview</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Course Categories */}
+      {/* Course Highlights */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-neutral-900 mb-4">What You'll Learn</h2>
+            <h2 className="text-3xl font-bold text-neutral-900 mb-4">What You'll Master</h2>
             <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-              Our courses cover the most common computer problems you'll encounter, with simple solutions you can implement right away.
+              Learn the essential computer skills that will make you confident with technology and able to solve common problems on your own.
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            {categories.map((category, index) => {
-              const Icon = category.icon;
+            {courseHighlights.map((highlight, index) => {
+              const Icon = highlight.icon;
               return (
                 <Card key={index} className="bg-neutral-50 hover:shadow-lg transition-shadow">
                   <CardContent className="p-8 text-center">
-                    <div className={`w-16 h-16 ${category.color} rounded-xl flex items-center justify-center mx-auto mb-6`}>
+                    <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-6">
                       <Icon className="text-white w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-semibold text-neutral-900 mb-4">{category.title}</h3>
-                    <p className="text-neutral-600 mb-6">{category.description}</p>
-                    <span className="text-sm text-secondary font-medium">{category.courseCount}</span>
+                    <h3 className="text-xl font-semibold text-neutral-900 mb-4">{highlight.title}</h3>
+                    <p className="text-neutral-600">{highlight.description}</p>
                   </CardContent>
                 </Card>
               );
@@ -145,74 +127,102 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Featured Courses */}
+      {/* Detailed Course Content */}
       <section className="py-16 bg-neutral-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl font-bold text-neutral-900 mb-2">Popular Courses</h2>
-              <p className="text-lg text-neutral-600">Start with these beginner-friendly courses</p>
-            </div>
-            <Button 
-              variant="link" 
-              onClick={handleGetStarted}
-              className="text-primary font-semibold text-lg"
-            >
-              View All Courses
-            </Button>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-neutral-900 mb-4">Complete Course Breakdown</h2>
+            <p className="text-lg text-neutral-600">
+              Everything you need to become confident with computers and troubleshooting
+            </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCourses.map((course) => (
-              <Card key={course.id} className="course-card bg-white shadow-sm overflow-hidden">
-                <img 
-                  src={course.image} 
-                  alt={course.title}
-                  className="w-full h-48 object-cover"
-                />
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge className={course.isFree ? "bg-secondary" : "bg-primary"}>
-                      {course.isFree ? "FREE" : "PREMIUM"}
-                    </Badge>
-                    <div className="flex items-center text-sm text-neutral-500">
-                      <Clock className="w-4 h-4 mr-1" />
-                      <span>{course.duration}</span>
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-3">{course.title}</h3>
-                  <p className="text-neutral-600 mb-4">{course.description}</p>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center text-sm text-neutral-500">
-                      <Star className="w-4 h-4 mr-2" />
-                      <span>{course.level}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-500">
-                      <Users className="w-4 h-4 mr-2" />
-                      <span>{course.students}</span>
-                    </div>
-                  </div>
-                  {course.price && (
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-2xl font-bold text-neutral-900">{course.price}</span>
-                      <span className="text-sm text-neutral-500">One-time purchase</span>
-                    </div>
-                  )}
-                  <Button 
-                    onClick={course.isFree ? handleStartFreeCourse : handleGetStarted}
-                    className="w-full btn-primary py-3"
-                  >
-                    {course.isFree ? "Start Free Course" : "Buy Course"}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4">
+                <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Task Manager Deep Dive</h3>
+                  <p className="text-neutral-600">Learn to identify resource-heavy processes, end unresponsive tasks, and optimize system performance.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4">
+                <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Complete Printer Mastery</h3>
+                  <p className="text-neutral-600">Set up wireless and wired printers, troubleshoot common printing issues, and maintain print quality.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4">
+                <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Router Configuration</h3>
+                  <p className="text-neutral-600">Access router settings, configure WiFi security, manage connected devices, and optimize network performance.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="flex items-start space-x-4">
+                <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Essential Troubleshooting</h3>
+                  <p className="text-neutral-600">Step-by-step problem-solving techniques for common computer issues like freezing, slow performance, and error messages.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4">
+                <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">File Management & Organization</h3>
+                  <p className="text-neutral-600">Organize files efficiently, understand file types, and manage storage space effectively.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4">
+                <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-neutral-900 mb-2">Basic Security & Updates</h3>
+                  <p className="text-neutral-600">Keep your system secure with proper update management and essential security practices.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Membership Section */}
-      <MembershipCards />
+      {/* Coming Soon Banner */}
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="flex items-center justify-center mb-6">
+            <Calendar className="w-8 h-8 mr-3" />
+            <h2 className="text-3xl font-bold">More Courses Coming Soon!</h2>
+          </div>
+          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            We're developing advanced courses on network security, hardware diagnostics, and enterprise troubleshooting. 
+            Stay tuned for exciting new content!
+          </p>
+          <div className="flex justify-center flex-wrap gap-4 mb-8">
+            <Badge variant="secondary" className="bg-white bg-opacity-20 text-white text-sm px-4 py-2">
+              Advanced Network Security
+            </Badge>
+            <Badge variant="secondary" className="bg-white bg-opacity-20 text-white text-sm px-4 py-2">
+              Hardware Diagnostics
+            </Badge>
+            <Badge variant="secondary" className="bg-white bg-opacity-20 text-white text-sm px-4 py-2">
+              Enterprise Support
+            </Badge>
+          </div>
+          <Button 
+            onClick={handleGetStarted}
+            className="bg-white text-blue-600 hover:bg-neutral-100 px-8 py-3 text-lg font-semibold"
+          >
+            Get Started with Current Course
+          </Button>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-neutral-800 text-white py-12">
@@ -225,12 +235,12 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">Courses</h4>
+              <h4 className="text-lg font-semibold mb-4">Course</h4>
               <ul className="space-y-2 text-neutral-300">
-                <li><a href="#" className="hover:text-white transition-colors">Hardware Basics</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Security & Safety</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Software Solutions</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Free Courses</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Computer Masterclass</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Task Manager Skills</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Printer Setup</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Router Configuration</a></li>
               </ul>
             </div>
             <div>
