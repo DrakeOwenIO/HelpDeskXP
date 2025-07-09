@@ -30,7 +30,7 @@ export default function MembershipCards() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-neutral-900 mb-4">Choose Your Learning Path</h2>
           <p className="text-lg text-neutral-600">
-            Get unlimited access to all courses or purchase individual courses as needed
+            Get a membership for unlimited access to all courses, or buy individual courses as needed
           </p>
         </div>
         
@@ -47,7 +47,7 @@ export default function MembershipCards() {
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <CheckCircle className="w-5 h-5 text-secondary mr-3 flex-shrink-0" />
-                  <span>Access to 5 free courses</span>
+                  <span>Access to all free courses</span>
                 </li>
                 <li className="flex items-center">
                   <CheckCircle className="w-5 h-5 text-secondary mr-3 flex-shrink-0" />

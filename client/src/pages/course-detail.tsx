@@ -156,7 +156,7 @@ export default function CourseDetail() {
     if (!canAccess) {
       toast({
         title: "Access Required",
-        description: "You need to purchase this course or upgrade to premium to access it.",
+        description: "You need to purchase this course or get a membership to access it.",
         variant: "destructive",
       });
       return;
@@ -206,7 +206,7 @@ export default function CourseDetail() {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <Badge className={course.isFree ? "bg-secondary" : "bg-primary"}>
-                {course.isFree ? "FREE" : "PREMIUM"}
+                {course.isFree ? "FREE" : course.price ? `$${course.price}` : "MEMBERSHIP"}
               </Badge>
               {isEnrolled && (
                 <Badge variant="outline" className="text-green-600 border-green-600">
@@ -308,7 +308,7 @@ export default function CourseDetail() {
               
               {!course.isFree && !user?.isPremium && !hasPurchased && (
                 <div className="text-center text-sm text-neutral-600">
-                  <p>Or upgrade to Premium for unlimited access to all courses</p>
+                  <p>Or get a membership for unlimited access to all courses</p>
                 </div>
               )}
             </div>
