@@ -1,0 +1,237 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema } from "@shared/schema";
+import { z } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Course routes
+  app.get('/api/courses', async (req, res) => {
+    try {
+      const courses = await storage.getPublishedCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  app.get('/api/courses/free', async (req, res) => {
+    try {
+      const courses = await storage.getFreeCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching free courses:", error);
+      res.status(500).json({ message: "Failed to fetch free courses" });
+    }
+  });
+
+  app.get('/api/courses/premium', async (req, res) => {
+    try {
+      const courses = await storage.getPremiumCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching premium courses:", error);
+      res.status(500).json({ message: "Failed to fetch premium courses" });
+    }
+  });
+
+  app.get('/api/courses/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const course = await storage.getCourse(id);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({ message: "Failed to fetch course" });
+    }
+  });
+
+  // Protected course routes
+  app.post('/api/courses/:id/enroll', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = parseInt(req.params.id);
+      
+      // Check if already enrolled
+      const existingEnrollment = await storage.getUserEnrollment(userId, courseId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Check if user can enroll (free course or has premium access or purchased)
+      const user = await storage.getUser(userId);
+      const hasPurchased = await storage.hasPurchased(userId, courseId);
+      
+      if (!course.isFree && !user?.isPremium && !hasPurchased) {
+        return res.status(403).json({ message: "Purchase required to enroll in this course" });
+      }
+
+      const enrollment = await storage.enrollUser({ userId, courseId });
+      res.json(enrollment);
+    } catch (error) {
+      console.error("Error enrolling user:", error);
+      res.status(500).json({ message: "Failed to enroll in course" });
+    }
+  });
+
+  app.post('/api/courses/:id/purchase', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = parseInt(req.params.id);
+      
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      if (course.isFree) {
+        return res.status(400).json({ message: "Cannot purchase a free course" });
+      }
+
+      // Check if already purchased
+      const hasPurchased = await storage.hasPurchased(userId, courseId);
+      if (hasPurchased) {
+        return res.status(400).json({ message: "Already purchased this course" });
+      }
+
+      // In a real implementation, this would integrate with a payment processor
+      const purchase = await storage.createPurchase({
+        userId,
+        courseId,
+        amount: course.price || "0"
+      });
+
+      // Auto-enroll after purchase
+      const existingEnrollment = await storage.getUserEnrollment(userId, courseId);
+      if (!existingEnrollment) {
+        await storage.enrollUser({ userId, courseId });
+      }
+
+      res.json(purchase);
+    } catch (error) {
+      console.error("Error purchasing course:", error);
+      res.status(500).json({ message: "Failed to purchase course" });
+    }
+  });
+
+  app.get('/api/user/enrollments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const enrollments = await storage.getUserEnrollments(userId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch enrollments" });
+    }
+  });
+
+  app.put('/api/courses/:id/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = parseInt(req.params.id);
+      const { progress } = req.body;
+
+      if (typeof progress !== 'number' || progress < 0 || progress > 100) {
+        return res.status(400).json({ message: "Progress must be a number between 0 and 100" });
+      }
+
+      const enrollment = await storage.updateProgress(userId, courseId, progress);
+      res.json(enrollment);
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      res.status(500).json({ message: "Failed to update progress" });
+    }
+  });
+
+  // Admin routes
+  const isAdmin = async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to verify admin status" });
+    }
+  };
+
+  app.get('/api/admin/courses', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const courses = await storage.getCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching admin courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  app.post('/api/admin/courses', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCourseSchema.parse(req.body);
+      const course = await storage.createCourse(validatedData);
+      res.json(course);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid course data", errors: error.errors });
+      }
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+
+  app.put('/api/admin/courses/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertCourseSchema.partial().parse(req.body);
+      const course = await storage.updateCourse(id, validatedData);
+      res.json(course);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid course data", errors: error.errors });
+      }
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+
+  app.delete('/api/admin/courses/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteCourse(id);
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
