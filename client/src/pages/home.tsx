@@ -113,7 +113,7 @@ export default function Home() {
                       <Star className="w-3 h-3 mr-1" />
                       Featured Course
                     </Badge>
-                    <Badge variant="outline">{masterclassCourse.level}</Badge>
+                    <Badge variant="outline">Beginner Friendly</Badge>
                   </div>
                   
                   <h2 className="text-2xl font-bold text-neutral-900 mb-4">
@@ -124,23 +124,9 @@ export default function Home() {
                     {masterclassCourse.description || "Learn essential computer skills including task manager usage, printer setup, router configuration, and everyday troubleshooting techniques. Perfect for building confidence with technology."}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-center text-sm text-neutral-600">
-                      <Clock className="w-4 h-4 mr-2" />
-                      {masterclassCourse.duration || "8+ hours"}
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-600">
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      50+ lessons
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-600">
-                      <Users className="w-4 h-4 mr-2" />
-                      1,200+ students
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-600">
-                      <Award className="w-4 h-4 mr-2" />
-                      Certificate
-                    </div>
+                  <div className="flex items-center text-sm text-neutral-600 mb-6">
+                    <Clock className="w-4 h-4 mr-2" />
+                    {masterclassCourse.duration || "8+ hours of content"}
                   </div>
 
                   {isEnrolled ? (
@@ -160,7 +146,7 @@ export default function Home() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold text-neutral-900">
-                          ${masterclassCourse.price || 97}
+                          ${masterclassCourse.price || 49}
                         </span>
                         <span className="text-sm text-neutral-500">One-time payment</span>
                       </div>
