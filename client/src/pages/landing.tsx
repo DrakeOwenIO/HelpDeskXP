@@ -210,8 +210,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold">More Courses Coming Soon!</h2>
           </div>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            We're developing advanced courses on network security, hardware diagnostics, and enterprise troubleshooting. 
-            Stay tuned for exciting new content!
+            We're working on new lessons that build on what you've learned — including simple guides on topics like home networking, computer hardware, and deeper troubleshooting. Stay tuned for helpful new content designed with beginners in mind!
           </p>
           <div className="flex justify-center flex-wrap gap-4 mb-8">
             <Badge variant="secondary" className="bg-white bg-opacity-20 text-white text-sm px-4 py-2">
