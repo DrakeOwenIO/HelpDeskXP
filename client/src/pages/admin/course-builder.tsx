@@ -86,6 +86,13 @@ export default function CourseBuilder() {
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   
+  // Module editing form state
+  const [moduleEditForm, setModuleEditForm] = useState({
+    title: "",
+    description: "",
+    isPublished: false,
+  });
+  
   // Quiz/Test management state
   const [createQuizOpen, setCreateQuizOpen] = useState(false);
   const [editQuizOpen, setEditQuizOpen] = useState(false);
@@ -238,6 +245,37 @@ export default function CourseBuilder() {
     }
   };
 
+  const handleEditModule = (module: CourseModule) => {
+    setModuleEditForm({
+      title: module.title,
+      description: module.description,
+      isPublished: module.isPublished,
+    });
+    setEditingModule(module.id);
+  };
+
+  const handleUpdateModule = () => {
+    if (editingModule && moduleEditForm.title.trim()) {
+      updateModuleMutation.mutate({
+        moduleId: editingModule,
+        data: {
+          title: moduleEditForm.title.trim(),
+          description: moduleEditForm.description.trim(),
+          isPublished: moduleEditForm.isPublished,
+        }
+      });
+    }
+  };
+
+  const handleCancelModuleEdit = () => {
+    setEditingModule(null);
+    setModuleEditForm({
+      title: "",
+      description: "",
+      isPublished: false,
+    });
+  };
+
   const getContentTypeIcon = (contentType: string) => {
     switch (contentType) {
       case 'video':
@@ -339,7 +377,7 @@ export default function CourseBuilder() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setEditingModule(module.id)}
+                          onClick={() => handleEditModule(module)}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -570,6 +608,66 @@ export default function CourseBuilder() {
           </div>
         </div>
         
+        {/* Module Edit Dialog */}
+        <Dialog open={!!editingModule} onOpenChange={(open) => !open && handleCancelModuleEdit()}>
+          <DialogContent aria-describedby="module-edit-description">
+            <DialogHeader>
+              <DialogTitle>Edit Module</DialogTitle>
+            </DialogHeader>
+            <div id="module-edit-description" className="sr-only">
+              Edit module title, description and publication status
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="module-title">Module Title</Label>
+                <Input
+                  id="module-title"
+                  value={moduleEditForm.title}
+                  onChange={(e) => setModuleEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter module title"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="module-description">Description</Label>
+                <Textarea
+                  id="module-description"
+                  value={moduleEditForm.description}
+                  onChange={(e) => setModuleEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter module description"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="module-published"
+                  checked={moduleEditForm.isPublished}
+                  onChange={(e) => setModuleEditForm(prev => ({ ...prev, isPublished: e.target.checked }))}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="module-published" className="text-sm font-medium">
+                  Published (visible to students in course viewer)
+                </Label>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={handleCancelModuleEdit}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleUpdateModule}
+                  disabled={updateModuleMutation.isPending || !moduleEditForm.title.trim()}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Update Module
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Quiz Creation Dialog */}
         <Dialog open={createQuizOpen} onOpenChange={setCreateQuizOpen}>
           <DialogContent className="max-w-2xl" aria-describedby="quiz-dialog-description">
