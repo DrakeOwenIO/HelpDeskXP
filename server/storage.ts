@@ -787,19 +787,27 @@ export class DatabaseStorage implements IStorage {
     await db.delete(courseLessons).where(eq(courseLessons.id, id));
   }
 
-  // Course viewer operations
+  // Course viewer operations (only published content)
   async getCourseWithModulesAndLessons(courseId: number): Promise<Course & { modules: (CourseModule & { lessons: CourseLesson[] })[] } | undefined> {
     const course = await this.getCourse(courseId);
     if (!course) return undefined;
 
+    // Only get PUBLISHED modules for regular course viewer
     const modules = await db.select().from(courseModules)
-      .where(eq(courseModules.courseId, courseId))
+      .where(and(
+        eq(courseModules.courseId, courseId),
+        eq(courseModules.isPublished, true)
+      ))
       .orderBy(courseModules.orderIndex);
 
     const modulesWithLessons = await Promise.all(
       modules.map(async (module) => {
+        // Only get PUBLISHED lessons for regular course viewer
         const lessons = await db.select().from(courseLessons)
-          .where(eq(courseLessons.moduleId, module.id))
+          .where(and(
+            eq(courseLessons.moduleId, module.id),
+            eq(courseLessons.isPublished, true)
+          ))
           .orderBy(courseLessons.orderIndex);
         return { ...module, lessons };
       })

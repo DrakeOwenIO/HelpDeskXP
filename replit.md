@@ -167,3 +167,6 @@ The application follows a monorepo structure with clear separation between clien
 - **Course Access Count Fix**: Fixed account management to only count enrollments in course access, not purchases - purchases are still displayed separately under purchases section
 - **Course File Upload System**: Completed custom thumbnail and video upload functionality with file size validation, preview support, and organized storage - fixes course update validation issues and provides seamless file management for course admins
 - **Course Builder Routing Fix**: Added missing route pattern for `/admin/course-builder/:courseId` to ensure course builder accessibility from both URL formats
+- **Course Preview System**: Implemented comprehensive course preview functionality for admins to view draft content including unpublished modules and lessons - provides dedicated API endpoint and preview page separate from regular course viewer
+- **Content Visibility Fix**: Fixed course viewer to only show published modules and lessons to regular users while admin preview shows all content including drafts
+- **Live Status Updates**: Fixed lesson status updates to properly refresh in course builder menu when changed in lesson editor through proper cache invalidation

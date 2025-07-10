@@ -88,6 +88,8 @@ export default function LessonEditor() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/lessons/${lessonId}`] });
+      // Also invalidate course structure to refresh lesson status in course builder
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
       toast({
         title: "Lesson Updated",
         description: "Lesson has been saved successfully.",
