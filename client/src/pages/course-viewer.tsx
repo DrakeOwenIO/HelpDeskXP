@@ -369,10 +369,13 @@ export default function CourseViewer() {
                   {/* Debug info - remove this once working */}
                   {process.env.NODE_ENV === 'development' && (
                     <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
-                      <p><strong>Debug:</strong> Lesson has {selectedLesson.contentBlocks?.length || 0} content blocks</p>
+                      <p><strong>Debug:</strong> Lesson "{selectedLesson.title}" (ID: {selectedLesson.id})</p>
+                      <p><strong>Published:</strong> {selectedLesson.isPublished ? 'Yes' : 'No'}</p>
+                      <p><strong>Content Blocks:</strong> {selectedLesson.contentBlocks?.length || 0}</p>
                       {selectedLesson.contentBlocks?.map((block, i) => (
                         <p key={i}>Block {i + 1}: {block.type} (quiz data: {block.type === 'quiz' ? (block.quiz ? 'present' : 'missing') : 'n/a'})</p>
                       ))}
+                      <p><strong>Content Type:</strong> {selectedLesson.contentType}</p>
                     </div>
                   )}
                   
