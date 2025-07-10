@@ -128,7 +128,7 @@ export default function AdminDashboard() {
       description: "Manage user permissions and access",
       icon: Users,
       href: "/admin/accounts",
-      color: "bg-red-500"
+      color: "bg-blue-500"
     }] : [])
   ];
 

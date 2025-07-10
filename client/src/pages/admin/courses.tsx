@@ -623,7 +623,7 @@ export default function AdminCourses() {
                         onClick={() => handleDelete(course.id)}
                         disabled={deleteMutation.isPending}
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-blue-500" />
                       </Button>
                     </div>
                   </div>

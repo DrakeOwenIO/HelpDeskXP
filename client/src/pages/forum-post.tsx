@@ -513,7 +513,7 @@ export default function ForumPost() {
                           <AlertDialogAction
                             onClick={handleDeletePost}
                             disabled={deletePostMutation.isPending}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-blue-600 hover:bg-blue-700"
                           >
                             {deletePostMutation.isPending ? "Deleting..." : "Delete Post"}
                           </AlertDialogAction>
