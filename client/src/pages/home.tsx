@@ -40,7 +40,7 @@ export default function Home() {
   const { data: enrollments, isLoading: enrollmentsLoading } = useQuery<Enrollment[]>({
     queryKey: ["/api/user/enrollments"],
     retry: false,
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
   // Find the main masterclass course (assuming it's the first or has specific title)

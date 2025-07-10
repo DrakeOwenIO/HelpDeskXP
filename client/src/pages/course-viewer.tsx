@@ -47,7 +47,7 @@ interface Quiz {
 export default function CourseViewer() {
   const { courseId } = useParams<{ courseId: string }>();
   const [, setLocation] = useLocation();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);

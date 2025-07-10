@@ -76,7 +76,7 @@ export default function ForumPost() {
   const [, setLocation] = useLocation();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

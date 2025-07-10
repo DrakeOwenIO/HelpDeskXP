@@ -27,13 +27,13 @@ export default function CourseDetail() {
   const { data: enrollment } = useQuery<Enrollment>({
     queryKey: ["/api/user/enrollments", id],
     retry: false,
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
   const { data: hasPurchased } = useQuery<boolean>({
     queryKey: ["/api/user/purchases", id],
     retry: false,
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
   const enrollMutation = useMutation({
