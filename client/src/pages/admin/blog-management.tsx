@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Plus, Edit, Trash2, Calendar, Eye, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
+import { isUnauthorizedError } from "@/lib/authUtils";
 import { Link } from "wouter";
 
 interface BlogPost {
@@ -46,12 +48,29 @@ type BlogPostFormData = z.infer<typeof blogPostSchema>;
 
 export default function BlogManagement() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
 
-  const { data: posts = [], isLoading } = useQuery<BlogPost[]>({
+  // Redirect if not admin
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || (!user?.isSuperAdmin && !user?.canCreateBlogPosts))) {
+      toast({
+        title: "Unauthorized",
+        description: "Blog management access required. Redirecting...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, user, toast]);
+
+  const { data: posts = [], isLoading: postsLoading } = useQuery<BlogPost[]>({
     queryKey: ['/api/admin/blog/posts'],
+    enabled: isAuthenticated && (user?.isSuperAdmin || user?.canCreateBlogPosts),
   });
 
   const form = useForm<BlogPostFormData>({
@@ -351,7 +370,7 @@ export default function BlogManagement() {
       </div>
 
       {/* Blog Posts List */}
-      {isLoading ? (
+      {postsLoading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="animate-pulse">

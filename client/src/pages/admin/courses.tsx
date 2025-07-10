@@ -39,10 +39,10 @@ export default function AdminCourses() {
 
   // Redirect if not admin
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !user?.isAdmin)) {
+    if (!isLoading && (!isAuthenticated || (!user?.isSuperAdmin && !user?.canCreateCourses))) {
       toast({
         title: "Unauthorized",
-        description: "Admin access required. Redirecting...",
+        description: "Course management access required. Redirecting...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -55,7 +55,7 @@ export default function AdminCourses() {
   const { data: courses, isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
     retry: false,
-    enabled: isAuthenticated && user?.isAdmin,
+    enabled: isAuthenticated && (user?.isSuperAdmin || user?.canCreateCourses),
   });
 
   const form = useForm<CourseFormData>({
@@ -330,7 +330,7 @@ export default function AdminCourses() {
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!user?.isSuperAdmin && !user?.canCreateCourses) {
     return null;
   }
 
