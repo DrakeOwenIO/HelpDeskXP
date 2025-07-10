@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 export function useAuth() {
-  // Check for Replit Auth user first
+  // Always call both hooks to avoid violating Rules of Hooks
   const { data: replitUser, isLoading: isLoadingReplit } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
@@ -9,17 +9,6 @@ export function useAuth() {
     refetchOnWindowFocus: false,
   });
 
-  // If Replit user exists, use that and don't check local auth
-  if (replitUser) {
-    return {
-      user: replitUser,
-      isLoading: isLoadingReplit,
-      isAuthenticated: true,
-      authType: 'replit',
-    };
-  }
-
-  // Only check local auth if no Replit user and not loading
   const { data: localUser, isLoading: isLoadingLocal } = useQuery({
     queryKey: ["/api/auth/local-user"],
     retry: false,
@@ -28,10 +17,23 @@ export function useAuth() {
     refetchOnWindowFocus: false,
   });
 
+  // Determine which user to use (prefer Replit if both are available)
+  const user = replitUser || localUser;
+  const isLoading = isLoadingReplit || isLoadingLocal;
+  const isAuthenticated = !!user;
+
+  // Determine auth type
+  let authType = null;
+  if (replitUser) {
+    authType = 'replit';
+  } else if (localUser) {
+    authType = 'local';
+  }
+
   return {
-    user: localUser || null,
-    isLoading: isLoadingReplit || isLoadingLocal,
-    isAuthenticated: !!localUser,
-    authType: localUser ? 'local' : null,
+    user,
+    isLoading,
+    isAuthenticated,
+    authType,
   };
 }
