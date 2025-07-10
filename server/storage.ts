@@ -54,7 +54,7 @@ export interface IStorage {
   
   // Account management operations
   getAllUsers(): Promise<User[]>;
-  getAllUsersWithCourseData(): Promise<(User & { enrollments: any[], purchases: any[] })[]>;
+  getAllUsersWithCourseData(): Promise<(UserWithoutPassword & { enrollments: any[], purchases: any[] })[]>;
   updateUserPermissions(userId: number, permissions: {
     canCreateBlogPosts?: boolean;
     canCreateCourses?: boolean;
@@ -212,8 +212,22 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
-  async getAllUsersWithCourseData(): Promise<(User & { enrollments: any[], purchases: any[] })[]> {
-    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+  async getAllUsersWithCourseData(): Promise<(UserWithoutPassword & { enrollments: any[], purchases: any[] })[]> {
+    const allUsers = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      isEmailVerified: users.isEmailVerified,
+      canCreateBlogPosts: users.canCreateBlogPosts,
+      canCreateCourses: users.canCreateCourses,
+      canModerateForum: users.canModerateForum,
+      canManageAccounts: users.canManageAccounts,
+      isSuperAdmin: users.isSuperAdmin,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).orderBy(desc(users.createdAt));
     
     const usersWithData = await Promise.all(allUsers.map(async (user) => {
       try {

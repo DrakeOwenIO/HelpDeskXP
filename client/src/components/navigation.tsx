@@ -118,7 +118,7 @@ export default function Navigation() {
                         My Courses
                       </DropdownMenuItem>
                     </Link>
-                    {user?.isAdmin && (
+                    {(user?.isSuperAdmin || user?.canCreateCourses || user?.canCreateBlogPosts || user?.canModerateForum) && (
                       <>
                         <DropdownMenuSeparator />
                         <Link href="/admin">
@@ -192,7 +192,7 @@ export default function Navigation() {
                             </span>
                           )}
                         </div>
-                        {user?.isAdmin && (
+                        {(user?.isSuperAdmin || user?.canCreateCourses || user?.canCreateBlogPosts || user?.canModerateForum) && (
                           <Link href="/admin">
                             <Button 
                               variant="ghost" 

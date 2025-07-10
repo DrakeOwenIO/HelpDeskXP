@@ -486,8 +486,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
       
-      // Check if user is admin OR has course creation permissions OR is super admin
-      if (!user?.isAdmin && !user?.canCreateCourses && !user?.isSuperAdmin) {
+      // Check if user has any admin permissions
+      if (!user?.isSuperAdmin && !user?.canCreateCourses && !user?.canCreateBlogPosts && !user?.canModerateForum && !user?.canManageAccounts) {
         return res.status(403).json({ message: "Admin access required" });
       }
       next();
