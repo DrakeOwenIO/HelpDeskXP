@@ -254,29 +254,33 @@ export default function Home() {
         </section>
 
         {/* Coming Soon Banner */}
-        <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <CardContent className="p-8 text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Calendar className="w-6 h-6 mr-2" />
-              <h3 className="text-2xl font-bold">More Courses Coming Soon!</h3>
+        <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="flex items-center justify-center mb-6">
+              <Calendar className="w-8 h-8 mr-3" />
+              <h2 className="text-3xl font-bold">More Courses Coming Soon!</h2>
             </div>
-            <p className="text-blue-100 mb-6">
-              We're developing advanced courses on network security, hardware diagnostics, and enterprise troubleshooting. 
-              Stay tuned for exciting new content!
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              We're working on new lessons that build on what you've learned — including simple guides on topics like home networking, computer hardware, and deeper troubleshooting. Stay tuned for helpful new content designed with beginners in mind!
             </p>
-            <div className="flex justify-center space-x-4">
-              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white">
-                Advanced Security
+            <div className="flex justify-center flex-wrap gap-4 mb-8">
+              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white text-sm px-4 py-2">
+                Advanced Network Security
               </Badge>
-              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white">
+              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white text-sm px-4 py-2">
                 Hardware Diagnostics
               </Badge>
-              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white">
+              <Badge variant="secondary" className="bg-white bg-opacity-20 text-white text-sm px-4 py-2">
                 Enterprise Support
               </Badge>
             </div>
-          </CardContent>
-        </Card>
+            <Button 
+              className="bg-white text-blue-600 hover:bg-neutral-100 px-8 py-3 text-lg font-semibold"
+            >
+              Get Notified
+            </Button>
+          </div>
+        </section>
       </div>
     </div>
   );
