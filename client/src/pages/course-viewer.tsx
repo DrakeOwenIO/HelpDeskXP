@@ -57,6 +57,8 @@ export default function CourseViewer() {
   const { data: course, isLoading: courseLoading } = useQuery<CourseWithContent>({
     queryKey: ['/api/courses', courseId, 'viewer'],
     enabled: !!courseId && !!user,
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache results
   });
 
   // Check if user has access to this course

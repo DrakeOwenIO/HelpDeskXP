@@ -364,6 +364,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Course not found" });
       }
       
+      // Debug: Log course structure with quiz data
+      console.log(`=== Course Viewer Debug for Course ${courseId} ===`);
+      console.log(`Modules found: ${course.modules.length}`);
+      course.modules.forEach((module, moduleIndex) => {
+        console.log(`  Module ${moduleIndex + 1}: "${module.title}" (Published: ${module.isPublished})`);
+        console.log(`    Lessons: ${module.lessons.length}`);
+        module.lessons.forEach((lesson, lessonIndex) => {
+          console.log(`      Lesson ${lessonIndex + 1}: "${lesson.title}" (Published: ${lesson.isPublished})`);
+          console.log(`        Content Blocks: ${lesson.contentBlocks ? JSON.parse(JSON.stringify(lesson.contentBlocks)).length : 0}`);
+          if (lesson.contentBlocks) {
+            const blocks = JSON.parse(JSON.stringify(lesson.contentBlocks));
+            blocks.forEach((block: any, blockIndex: number) => {
+              console.log(`          Block ${blockIndex + 1}: ${block.type} ${block.type === 'quiz' ? `(Quiz: ${block.quiz ? 'present' : 'missing'})` : ''}`);
+            });
+          }
+        });
+      });
+      console.log(`=== End Course Viewer Debug ===`);
+      
       res.json(course);
     } catch (error) {
       console.error("Error fetching course viewer data:", error);
