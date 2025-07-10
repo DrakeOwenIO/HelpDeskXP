@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings, BookOpen, CreditCard } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings, BookOpen, CreditCard, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { Link } from "wouter";
 
 interface User {
@@ -73,6 +75,7 @@ const UserPermissionsCard = ({ user, onUpdate }: {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [courseAccessOpen, setCourseAccessOpen] = useState(false);
 
   const hasChanges = JSON.stringify(permissions) !== JSON.stringify({
     canCreateBlogPosts: user.canCreateBlogPosts,
@@ -258,58 +261,77 @@ const UserPermissionsCard = ({ user, onUpdate }: {
               />
             </div>
 
-            {/* Course Access Section */}
+            {/* Course Access Section - Collapsible */}
             <div className="border-t pt-3">
-              <div className="mb-3">
-                <h4 className="text-sm font-medium text-neutral-900 flex items-center">
-                  <BookOpen className="w-4 h-4 mr-1" />
-                  Course Access
-                </h4>
-              </div>
-              
-              {user.enrollments && user.enrollments.length > 0 ? (
-                <div className="space-y-2">
-                  {user.enrollments.map((enrollment) => (
-                    <div key={enrollment.id} className="bg-green-50 border border-green-200 rounded-md p-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium text-green-800">{enrollment.courseName}</p>
-                          <p className="text-xs text-green-600">Progress: {enrollment.progress}%</p>
-                        </div>
-                        <div className="text-xs text-green-600">
-                          Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                        </div>
-                      </div>
+              <Collapsible open={courseAccessOpen} onOpenChange={setCourseAccessOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-between p-0 h-auto font-medium text-sm text-neutral-900"
+                  >
+                    <div className="flex items-center">
+                      <BookOpen className="w-4 h-4 mr-1" />
+                      Course Access
+                      {(user.enrollments?.length || 0) + (user.purchases?.length || 0) > 0 && (
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          {(user.enrollments?.length || 0) + (user.purchases?.length || 0)}
+                        </Badge>
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-neutral-500 italic">No course enrollments</p>
-              )}
-
-              {user.purchases && user.purchases.length > 0 && (
-                <div className="mt-3">
-                  <h5 className="text-xs font-medium text-neutral-700 mb-2 flex items-center">
-                    <CreditCard className="w-3 h-3 mr-1" />
-                    Purchases
-                  </h5>
-                  <div className="space-y-1">
-                    {user.purchases.map((purchase) => (
-                      <div key={purchase.id} className="bg-blue-50 border border-blue-200 rounded-md p-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-medium text-blue-800">{purchase.courseName}</p>
-                          <div className="text-right">
-                            <p className="text-xs font-medium text-blue-800">${purchase.amount}</p>
-                            <p className="text-xs text-blue-600">
-                              {new Date(purchase.purchasedAt).toLocaleDateString()}
-                            </p>
+                    {courseAccessOpen ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  {user.enrollments && user.enrollments.length > 0 ? (
+                    <div className="space-y-2">
+                      {user.enrollments.map((enrollment) => (
+                        <div key={enrollment.id} className="bg-green-50 border border-green-200 rounded-md p-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-medium text-green-800">{enrollment.courseName}</p>
+                              <p className="text-xs text-green-600">Progress: {enrollment.progress}%</p>
+                            </div>
+                            <div className="text-xs text-green-600">
+                              Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-neutral-500 italic">No course enrollments</p>
+                  )}
+
+                  {user.purchases && user.purchases.length > 0 && (
+                    <div className="mt-3">
+                      <h5 className="text-xs font-medium text-neutral-700 mb-2 flex items-center">
+                        <CreditCard className="w-3 h-3 mr-1" />
+                        Purchases
+                      </h5>
+                      <div className="space-y-1">
+                        {user.purchases.map((purchase) => (
+                          <div key={purchase.id} className="bg-blue-50 border border-blue-200 rounded-md p-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-medium text-blue-800">{purchase.courseName}</p>
+                              <div className="text-right">
+                                <p className="text-xs font-medium text-blue-800">${purchase.amount}</p>
+                                <p className="text-xs text-blue-600">
+                                  {new Date(purchase.purchasedAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
 
             <div className="text-xs text-neutral-500">
@@ -325,10 +347,22 @@ const UserPermissionsCard = ({ user, onUpdate }: {
 export default function AccountManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['/api/admin/users'],
   });
+
+  // Filter users based on search term
+  const filteredUsers = users?.filter((user: User) => {
+    const searchLower = searchTerm.toLowerCase();
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim().toLowerCase();
+    const email = user.email?.toLowerCase() || '';
+    
+    return fullName.includes(searchLower) || 
+           email.includes(searchLower) ||
+           user.id.includes(searchLower);
+  }) || [];
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async ({ userId, permissions }: { userId: string; permissions: UserPermissions }) => {
@@ -469,14 +503,41 @@ export default function AccountManagement() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Users ({users?.length || 0})</h2>
-        {users?.map((user: User) => (
-          <UserPermissionsCard
-            key={user.id}
-            user={user}
-            onUpdate={handleUpdatePermissions}
-          />
-        ))}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">
+            Users ({filteredUsers.length}{searchTerm && ` of ${users?.length || 0}`})
+          </h2>
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
+            <Input
+              type="text"
+              placeholder="Search users by name, email, or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user: User) => (
+            <UserPermissionsCard
+              key={user.id}
+              user={user}
+              onUpdate={handleUpdatePermissions}
+            />
+          ))
+        ) : searchTerm ? (
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center text-neutral-500">
+                <Search className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
+                <p className="text-lg font-medium mb-2">No users found</p>
+                <p className="text-sm">Try adjusting your search term or clear the search to see all users.</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </div>
   );
