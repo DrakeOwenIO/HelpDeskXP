@@ -37,6 +37,16 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
+  // Account management operations
+  getAllUsers(): Promise<User[]>;
+  updateUserPermissions(userId: string, permissions: {
+    canCreateBlogPosts?: boolean;
+    canCreateCourses?: boolean;
+    canModerateForum?: boolean;
+    canManageAccounts?: boolean;
+    isSuperAdmin?: boolean;
+  }): Promise<User>;
+  
   // Course operations
   getCourses(): Promise<Course[]>;
   getCourse(id: number): Promise<Course | undefined>;
@@ -110,6 +120,29 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Account management operations
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUserPermissions(userId: string, permissions: {
+    canCreateBlogPosts?: boolean;
+    canCreateCourses?: boolean;
+    canModerateForum?: boolean;
+    canManageAccounts?: boolean;
+    isSuperAdmin?: boolean;
+  }): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...permissions,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
   }
 
   // Course operations

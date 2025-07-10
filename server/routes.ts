@@ -182,6 +182,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Super Admin middleware for account management
+  const isSuperAdmin = async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isSuperAdmin) {
+        return res.status(403).json({ message: "Super Admin access required" });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to verify super admin status" });
+    }
+  };
+
+  // Account management routes (Super Admin only)
+  app.get('/api/admin/users', isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.put('/api/admin/users/:id/permissions', isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const { permissions } = req.body;
+      
+      const updatedUser = await storage.updateUserPermissions(userId, permissions);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user permissions:", error);
+      res.status(500).json({ message: "Failed to update user permissions" });
+    }
+  });
+
   app.get('/api/admin/courses', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const courses = await storage.getCourses();

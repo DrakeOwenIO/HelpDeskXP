@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, BookOpen, User, Settings, Shield, LogOut } from "lucide-react";
+import { Menu, BookOpen, User, Settings, Shield, LogOut, Users } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -117,6 +117,14 @@ export default function Navigation() {
                             Admin Dashboard
                           </DropdownMenuItem>
                         </Link>
+                        {user?.isSuperAdmin && (
+                          <Link href="/admin/accounts">
+                            <DropdownMenuItem>
+                              <Users className="mr-2 h-4 w-4" />
+                              Account Management
+                            </DropdownMenuItem>
+                          </Link>
+                        )}
                       </>
                     )}
                     <DropdownMenuSeparator />

@@ -35,6 +35,12 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   isPremium: boolean("is_premium").default(false),
   isAdmin: boolean("is_admin").default(false),
+  // Individual permissions
+  canCreateBlogPosts: boolean("can_create_blog_posts").default(false),
+  canCreateCourses: boolean("can_create_courses").default(false),
+  canModerateForum: boolean("can_moderate_forum").default(false),
+  canManageAccounts: boolean("can_manage_accounts").default(false),
+  isSuperAdmin: boolean("is_super_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

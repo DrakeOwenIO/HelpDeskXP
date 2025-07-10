@@ -122,7 +122,14 @@ export default function AdminDashboard() {
       icon: BarChart3,
       href: "/admin/analytics",
       color: "bg-accent"
-    }
+    },
+    ...(user?.isSuperAdmin ? [{
+      title: "Account Management",
+      description: "Manage user permissions and access",
+      icon: Users,
+      href: "/admin/accounts",
+      color: "bg-red-500"
+    }] : [])
   ];
 
   return (

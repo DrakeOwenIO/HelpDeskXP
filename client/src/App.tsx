@@ -17,6 +17,7 @@ import AdminCourses from "@/pages/admin/courses";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
 import BlogManagement from "@/pages/admin/blog-management";
+import AccountManagement from "@/pages/admin/account-management";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/courses" component={AdminCourses} />
           <Route path="/admin/blog" component={BlogManagement} />
+          <Route path="/admin/accounts" component={AccountManagement} />
         </>
       )}
       <Route component={NotFound} />
