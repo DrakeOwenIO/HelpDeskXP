@@ -21,9 +21,10 @@ interface Quiz {
 
 interface QuizPlayerProps {
   quiz: Quiz;
+  onQuizComplete?: (passed: boolean, score: number) => void;
 }
 
-export default function QuizPlayer({ quiz }: QuizPlayerProps) {
+export default function QuizPlayer({ quiz, onQuizComplete }: QuizPlayerProps) {
   const { toast } = useToast();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
@@ -53,8 +54,28 @@ export default function QuizPlayer({ quiz }: QuizPlayerProps) {
 
   const handleNext = () => {
     if (isLastQuestion) {
+      const finalScore = calculateScore();
+      const finalPassed = finalScore >= quiz.passingScore;
       setShowResults(true);
       setQuizCompleted(true);
+      
+      // Notify parent component of quiz completion
+      if (onQuizComplete) {
+        onQuizComplete(finalPassed, finalScore);
+      }
+      
+      if (finalPassed) {
+        toast({
+          title: "Quiz Passed!",
+          description: `Great job! You scored ${finalScore}% and can proceed to the next lesson.`,
+        });
+      } else {
+        toast({
+          title: "Quiz Failed",
+          description: `You scored ${finalScore}%. You need ${quiz.passingScore}% to pass. Please retake the quiz.`,
+          variant: "destructive",
+        });
+      }
     } else {
       setCurrentQuestionIndex(prev => prev + 1);
     }

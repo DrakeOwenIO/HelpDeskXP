@@ -52,6 +52,7 @@ export default function CourseViewer() {
   
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
+  const [quizResults, setQuizResults] = useState<{ [lessonId: number]: { [quizId: string]: { passed: boolean; score: number } } }>({});
 
   // Fetch course content with modules and lessons
   const { data: course, isLoading: courseLoading } = useQuery<CourseWithContent>({
@@ -193,10 +194,40 @@ export default function CourseViewer() {
     );
   }
 
+  // Helper function to check if all quizzes in a lesson are passed
+  const areAllQuizzesPassed = (lesson: CourseLesson) => {
+    if (!lesson.contentBlocks) return true; // No quizzes to check
+    
+    const quizBlocks = lesson.contentBlocks.filter(block => block.type === 'quiz');
+    if (quizBlocks.length === 0) return true; // No quizzes in this lesson
+    
+    const lessonQuizResults = quizResults[lesson.id] || {};
+    return quizBlocks.every(quizBlock => 
+      lessonQuizResults[quizBlock.id]?.passed === true
+    );
+  };
+
   const allLessons = course.modules.flatMap(module => module.lessons);
   const currentLessonIndex = allLessons.findIndex(lesson => lesson.id === selectedLessonId);
   const canGoPrevious = currentLessonIndex > 0;
-  const canGoNext = currentLessonIndex < allLessons.length - 1;
+  
+  // Can only go to next lesson if current lesson has all quizzes passed
+  const currentLesson = selectedLesson;
+  const canGoNext = currentLessonIndex < allLessons.length - 1 && 
+    (currentLesson ? areAllQuizzesPassed(currentLesson) : true);
+
+  // Handler for quiz completion
+  const handleQuizComplete = (quizId: string, passed: boolean, score: number) => {
+    if (!selectedLessonId) return;
+    
+    setQuizResults(prev => ({
+      ...prev,
+      [selectedLessonId]: {
+        ...prev[selectedLessonId],
+        [quizId]: { passed, score }
+      }
+    }));
+  };
 
   const handlePreviousLesson = () => {
     if (canGoPrevious) {
@@ -205,6 +236,17 @@ export default function CourseViewer() {
   };
 
   const handleNextLesson = () => {
+    if (!selectedLesson) return;
+    
+    if (!areAllQuizzesPassed(selectedLesson)) {
+      toast({
+        title: "Quiz Required",
+        description: "Please complete all quizzes with 80% or higher before proceeding to the next lesson.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (canGoNext) {
       setSelectedLessonId(allLessons[currentLessonIndex + 1].id);
     }
@@ -394,24 +436,27 @@ export default function CourseViewer() {
                   {process.env.NODE_ENV === 'development' && selectedLesson.id === 1 && (
                     <div className="mb-6">
                       <h3 className="text-lg font-medium mb-4">Test Quiz (Development Only)</h3>
-                      <QuizPlayer quiz={{
-                        title: "Test Quiz",
-                        passingScore: 80,
-                        questions: [
-                          {
-                            id: "1",
-                            question: "What is the keyboard shortcut to open Task Manager?",
-                            options: ["Ctrl+Alt+Del", "Ctrl+Shift+Esc", "Alt+Tab", "Ctrl+Alt+T"],
-                            correctAnswer: 1
-                          },
-                          {
-                            id: "2", 
-                            question: "Which component typically causes boot failures?",
-                            options: ["RAM", "Hard Drive", "Power Supply", "All of the above"],
-                            correctAnswer: 3
-                          }
-                        ]
-                      }} />
+                      <QuizPlayer 
+                        quiz={{
+                          title: "Test Quiz",
+                          passingScore: 80,
+                          questions: [
+                            {
+                              id: "1",
+                              question: "What is the keyboard shortcut to open Task Manager?",
+                              options: ["Ctrl+Alt+Del", "Ctrl+Shift+Esc", "Alt+Tab", "Ctrl+Alt+T"],
+                              correctAnswer: 1
+                            },
+                            {
+                              id: "2", 
+                              question: "Which component typically causes boot failures?",
+                              options: ["RAM", "Hard Drive", "Power Supply", "All of the above"],
+                              correctAnswer: 3
+                            }
+                          ]
+                        }}
+                        onQuizComplete={(passed, score) => handleQuizComplete("test-quiz-1", passed, score)}
+                      />
                     </div>
                   )}
                   
@@ -450,7 +495,10 @@ export default function CourseViewer() {
                               </div>
                             )}
                             {block.type === 'quiz' && block.quiz && (
-                              <QuizPlayer quiz={block.quiz} />
+                              <QuizPlayer 
+                                quiz={block.quiz} 
+                                onQuizComplete={(passed, score) => handleQuizComplete(block.id, passed, score)}
+                              />
                             )}
                             {block.type === 'quiz' && !block.quiz && (
                               <div className="p-4 bg-red-50 border border-red-200 rounded">
@@ -515,9 +563,21 @@ export default function CourseViewer() {
                     Previous Lesson
                   </Button>
                   
+                  <div className="text-center">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Lesson {currentLessonIndex + 1} of {allLessons.length}
+                    </div>
+                    {currentLesson && !areAllQuizzesPassed(currentLesson) && (
+                      <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                        Complete all quizzes to proceed
+                      </div>
+                    )}
+                  </div>
+                  
                   <Button
                     onClick={handleNextLesson}
                     disabled={!canGoNext}
+                    variant={currentLesson && !areAllQuizzesPassed(currentLesson) ? "outline" : "default"}
                   >
                     Next Lesson
                     <ChevronRight className="h-4 w-4 ml-2" />
@@ -540,7 +600,7 @@ export default function CourseViewer() {
 }
 
 // Quiz Player Component
-function QuizPlayer({ quiz }: { quiz: Quiz }) {
+function QuizPlayer({ quiz, onQuizComplete }: { quiz: Quiz; onQuizComplete?: (passed: boolean, score: number) => void }) {
   const { toast } = useToast();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
@@ -572,6 +632,13 @@ function QuizPlayer({ quiz }: { quiz: Quiz }) {
     if (isLastQuestion) {
       setShowResults(true);
       setQuizCompleted(true);
+      
+      // Calculate final score and call callback
+      const finalScore = calculateScore();
+      const finalPassed = finalScore >= quiz.passingScore;
+      if (onQuizComplete) {
+        onQuizComplete(finalPassed, finalScore);
+      }
     } else {
       setCurrentQuestionIndex(prev => prev + 1);
     }
