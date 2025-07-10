@@ -366,6 +366,41 @@ export default function CourseViewer() {
               {/* Lesson Content */}
               <div className="flex-1 p-6">
                 <div className="max-w-4xl mx-auto">
+                  {/* Debug info - remove this once working */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                      <p><strong>Debug:</strong> Lesson has {selectedLesson.contentBlocks?.length || 0} content blocks</p>
+                      {selectedLesson.contentBlocks?.map((block, i) => (
+                        <p key={i}>Block {i + 1}: {block.type} (quiz data: {block.type === 'quiz' ? (block.quiz ? 'present' : 'missing') : 'n/a'})</p>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* TEST QUIZ - remove this once working */}
+                  {process.env.NODE_ENV === 'development' && selectedLesson.id === 1 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-4">Test Quiz (Development Only)</h3>
+                      <QuizPlayer quiz={{
+                        title: "Test Quiz",
+                        passingScore: 80,
+                        questions: [
+                          {
+                            id: "1",
+                            question: "What is the keyboard shortcut to open Task Manager?",
+                            options: ["Ctrl+Alt+Del", "Ctrl+Shift+Esc", "Alt+Tab", "Ctrl+Alt+T"],
+                            correctAnswer: 1
+                          },
+                          {
+                            id: "2", 
+                            question: "Which component typically causes boot failures?",
+                            options: ["RAM", "Hard Drive", "Power Supply", "All of the above"],
+                            correctAnswer: 3
+                          }
+                        ]
+                      }} />
+                    </div>
+                  )}
+                  
                   {/* Render content blocks if they exist */}
                   {selectedLesson.contentBlocks && selectedLesson.contentBlocks.length > 0 ? (
                     <div className="space-y-6">
@@ -402,6 +437,11 @@ export default function CourseViewer() {
                             )}
                             {block.type === 'quiz' && block.quiz && (
                               <QuizPlayer quiz={block.quiz} />
+                            )}
+                            {block.type === 'quiz' && !block.quiz && (
+                              <div className="p-4 bg-red-50 border border-red-200 rounded">
+                                <p className="text-red-600">Quiz data is missing for this quiz block</p>
+                              </div>
                             )}
                           </div>
                         ))}
