@@ -2,6 +2,37 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import express from "express";
+
+// Configure multer for file uploads
+const uploadDir = path.join(process.cwd(), 'uploads', 'profile-images');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: uploadDir,
+    filename: (req, file, cb) => {
+      const userId = (req as any).user?.claims?.sub;
+      const ext = path.extname(file.originalname);
+      cb(null, `${userId}-${Date.now()}${ext}`);
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 import { insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema, insertForumPostSchema, insertForumReplySchema, insertBlogPostSchema, insertBlogCommentSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -20,6 +51,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
+
+  // Profile routes
+  app.patch('/api/user/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { firstName, lastName } = req.body;
+
+      // Validate input
+      if (!firstName || !lastName) {
+        return res.status(400).json({ message: "First name and last name are required" });
+      }
+
+      if (firstName.length > 50 || lastName.length > 50) {
+        return res.status(400).json({ message: "Names must be less than 50 characters" });
+      }
+
+      const updatedUser = await storage.updateUserProfile(userId, {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.post('/api/user/profile-image', isAuthenticated, upload.single('profileImage'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      // Generate the URL for the uploaded file
+      const imageUrl = `/uploads/profile-images/${req.file.filename}`;
+      
+      const updatedUser = await storage.updateUserProfile(userId, {
+        profileImageUrl: imageUrl,
+      });
+
+      res.json({ message: "Profile image updated successfully", user: updatedUser });
+    } catch (error) {
+      console.error("Error updating profile image:", error);
+      res.status(500).json({ message: "Failed to update profile image" });
+    }
+  });
+
+  // Serve uploaded profile images
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Course routes
   app.get('/api/courses', async (req, res) => {
