@@ -26,22 +26,23 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// User storage table with local authentication
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique(),
+  id: serial("id").primaryKey(),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(), // hashed password
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  isPremium: boolean("is_premium").default(false),
-  isAdmin: boolean("is_admin").default(false),
-  // Individual permissions
+  isEmailVerified: boolean("is_email_verified").default(false),
+  
+  // Permission system
   canCreateBlogPosts: boolean("can_create_blog_posts").default(false),
   canCreateCourses: boolean("can_create_courses").default(false),
   canModerateForum: boolean("can_moderate_forum").default(false),
   canManageAccounts: boolean("can_manage_accounts").default(false),
   isSuperAdmin: boolean("is_super_admin").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -69,8 +70,8 @@ export const courses = pgTable("courses", {
 
 export const enrollments = pgTable("enrollments", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  courseId: integer("course_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  courseId: integer("course_id").notNull().references(() => courses.id, { onDelete: 'cascade' }),
   progress: integer("progress").default(0),
   completed: boolean("completed").default(false),
   enrolledAt: timestamp("enrolled_at").defaultNow(),
@@ -79,8 +80,8 @@ export const enrollments = pgTable("enrollments", {
 
 export const purchases = pgTable("purchases", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  courseId: integer("course_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  courseId: integer("course_id").notNull().references(() => courses.id, { onDelete: 'cascade' }),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   purchasedAt: timestamp("purchased_at").defaultNow(),
 });
@@ -89,7 +90,7 @@ export const forumPosts = pgTable("forum_posts", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
-  authorId: varchar("author_id").notNull(),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   category: varchar("category", { length: 100 }).default("General"),
   upvotes: integer("upvotes").default(0),
   replyCount: integer("reply_count").default(0),
@@ -101,9 +102,9 @@ export const forumPosts = pgTable("forum_posts", {
 
 export const forumReplies = pgTable("forum_replies", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull(),
+  postId: integer("post_id").notNull().references(() => forumPosts.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
-  authorId: varchar("author_id").notNull(),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   upvotes: integer("upvotes").default(0),
   parentReplyId: integer("parent_reply_id"), // For nested replies
   createdAt: timestamp("created_at").defaultNow(),
@@ -112,9 +113,9 @@ export const forumReplies = pgTable("forum_replies", {
 
 export const forumVotes = pgTable("forum_votes", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  postId: integer("post_id"),
-  replyId: integer("reply_id"),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  postId: integer("post_id").references(() => forumPosts.id, { onDelete: 'cascade' }),
+  replyId: integer("reply_id").references(() => forumReplies.id, { onDelete: 'cascade' }),
   voteType: varchar("vote_type", { length: 10 }).notNull(), // 'upvote' or 'downvote'
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -127,7 +128,7 @@ export const blogPosts = pgTable("blog_posts", {
   content: text("content").notNull(),
   excerpt: text("excerpt"), // Short description for previews
   featuredImage: varchar("featured_image", { length: 500 }), // URL to featured image
-  authorId: varchar("author_id").notNull(),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, published, archived
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -136,8 +137,8 @@ export const blogPosts = pgTable("blog_posts", {
 
 export const blogComments = pgTable("blog_comments", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull(),
-  authorId: varchar("author_id").notNull(),
+  postId: integer("post_id").notNull().references(() => blogPosts.id, { onDelete: 'cascade' }),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
   parentCommentId: integer("parent_comment_id"), // For nested comments
   createdAt: timestamp("created_at").defaultNow(),
@@ -174,7 +175,7 @@ export const courseLessons = pgTable("course_lessons", {
 
 export const userLessonProgress = pgTable("user_lesson_progress", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   lessonId: integer("lesson_id").notNull().references(() => courseLessons.id, { onDelete: 'cascade' }),
   isCompleted: boolean("is_completed").default(false),
   completedAt: timestamp("completed_at"),
@@ -213,7 +214,7 @@ export const quizQuestions = pgTable("quiz_questions", {
 
 export const quizAttempts = pgTable("quiz_attempts", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   quizId: integer("quiz_id").notNull().references(() => quizzes.id, { onDelete: 'cascade' }),
   score: integer("score").notNull().default(0), // Percentage score
   totalPoints: integer("total_points").notNull(),
