@@ -13,6 +13,7 @@ import CourseViewer from "@/pages/course-viewer";
 import Forum from "@/pages/forum";
 import ForumPost from "@/pages/forum-post";
 import CreatePost from "@/pages/create-post";
+import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCourses from "@/pages/admin/courses";
 import CourseBuilder from "@/pages/admin/course-builder";
 import Blog from "@/pages/blog";
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/forum/posts/:id" component={ForumPost} />
           <Route path="/blog" component={Blog} />
           <Route path="/blog/:id" component={BlogPost} />
+          <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/courses" component={AdminCourses} />
           <Route path="/admin/courses/:courseId/builder" component={CourseBuilder} />
           <Route path="/admin/accounts" component={AccountManagement} />

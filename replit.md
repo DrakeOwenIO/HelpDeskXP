@@ -41,10 +41,14 @@ Preferred communication style: Simple, everyday language.
 ### Course Management
 - Single masterclass course model focusing on everyday computer usage and troubleshooting
 - Course covers task manager usage, printer setup, router configuration, and essential troubleshooting
-- Fixed-price model with one-time payment ($97)
+- Fixed-price model with one-time payment ($49)
 - Course enrollment and progress tracking
 - Purchase system for single course access
 - "More courses coming soon" messaging for future expansion
+- **Course Builder**: Admin interface for creating structured course content with modules and lessons
+- **Course Viewer**: Interactive learning interface with lesson navigation, progress tracking, and completion status
+- **Content Types**: Support for text, video, and quiz lesson types with duration tracking
+- **Progress System**: Individual lesson completion tracking with automatic course progress calculation
 
 ### Community Forum System
 - Public forum access for reading posts and replies
@@ -154,3 +158,5 @@ The application follows a monorepo structure with clear separation between clien
 - **Account Management System**: Implemented comprehensive permission system with 5 levels (Member, Blog Admin, Course Admin, Forum Moderator, Super Admin) - Super Admin has exclusive access to account management interface
 - **Profile System**: Complete profile page with display name editing and profile picture upload functionality
 - **Course Access Management**: Enhanced account management to show user enrollments and purchases, with ability to grant course access without payment
+- **Course Builder & Viewer System**: Complete course content management system with hierarchical structure (courses > modules > lessons), lesson types (text, video, quiz), progress tracking, and interactive learning experience with navigation between lessons
+- **Admin Dashboard**: Fixed routing issues and restored full admin dashboard functionality for course and user management
