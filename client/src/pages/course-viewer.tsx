@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, CheckCircle2, Play, Clock, FileText, Video, Award, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Play, Clock, FileText, Video, Award, ChevronLeft, ChevronRight, HelpCircle, RotateCcw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Link } from "wouter";
@@ -29,6 +29,19 @@ interface EnrollmentData {
   progress: number;
   completed: boolean;
   enrolledAt: string;
+}
+
+interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+}
+
+interface Quiz {
+  title: string;
+  questions: QuizQuestion[];
+  passingScore: number;
 }
 
 export default function CourseViewer() {
@@ -387,6 +400,9 @@ export default function CourseViewer() {
                                 </div>
                               </div>
                             )}
+                            {block.type === 'quiz' && block.quiz && (
+                              <QuizPlayer quiz={block.quiz} />
+                            )}
                           </div>
                         ))}
                     </div>
@@ -466,5 +482,221 @@ export default function CourseViewer() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Quiz Player Component
+function QuizPlayer({ quiz }: { quiz: Quiz }) {
+  const { toast } = useToast();
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
+  const [showResults, setShowResults] = useState(false);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+
+  const currentQuestion = quiz.questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
+  const hasAnsweredCurrent = selectedAnswers[currentQuestionIndex] !== undefined;
+
+  const calculateScore = () => {
+    let correct = 0;
+    quiz.questions.forEach((question, index) => {
+      if (selectedAnswers[index] === question.correctAnswer) {
+        correct++;
+      }
+    });
+    return Math.round((correct / quiz.questions.length) * 100);
+  };
+
+  const handleAnswerSelect = (answerIndex: number) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [currentQuestionIndex]: answerIndex
+    }));
+  };
+
+  const handleNext = () => {
+    if (isLastQuestion) {
+      setShowResults(true);
+      setQuizCompleted(true);
+    } else {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const handleRetakeQuiz = () => {
+    setCurrentQuestionIndex(0);
+    setSelectedAnswers({});
+    setShowResults(false);
+    setQuizCompleted(false);
+  };
+
+  const score = calculateScore();
+  const passed = score >= quiz.passingScore;
+
+  if (showResults) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center gap-2">
+            <Award className="h-6 w-6" />
+            Quiz Results
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="text-center">
+            <div className={`text-4xl font-bold mb-2 ${passed ? 'text-green-600' : 'text-red-600'}`}>
+              {score}%
+            </div>
+            <p className="text-lg mb-4">
+              You got {Object.values(selectedAnswers).filter((answer, index) => 
+                answer === quiz.questions[index].correctAnswer
+              ).length} out of {quiz.questions.length} questions correct
+            </p>
+            <Badge variant={passed ? "default" : "destructive"} className="text-sm">
+              {passed ? `Passed! (${quiz.passingScore}% required)` : `Failed (${quiz.passingScore}% required)`}
+            </Badge>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-medium">Review Your Answers:</h3>
+            {quiz.questions.map((question, index) => {
+              const userAnswer = selectedAnswers[index];
+              const isCorrect = userAnswer === question.correctAnswer;
+              
+              return (
+                <div key={question.id} className="border rounded-lg p-4">
+                  <p className="font-medium mb-3">{index + 1}. {question.question}</p>
+                  <div className="space-y-2">
+                    {question.options.map((option, optIndex) => {
+                      const isSelected = userAnswer === optIndex;
+                      const isCorrectAnswer = optIndex === question.correctAnswer;
+                      
+                      return (
+                        <div
+                          key={optIndex}
+                          className={`p-2 rounded border ${
+                            isCorrectAnswer
+                              ? 'bg-green-50 border-green-200 text-green-800'
+                              : isSelected && !isCorrect
+                              ? 'bg-red-50 border-red-200 text-red-800'
+                              : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              isCorrectAnswer 
+                                ? 'bg-green-500' 
+                                : isSelected 
+                                ? 'bg-red-500' 
+                                : 'bg-gray-300'
+                            }`} />
+                            <span>{option}</span>
+                            {isCorrectAnswer && <span className="text-xs font-medium">(Correct)</span>}
+                            {isSelected && !isCorrect && <span className="text-xs font-medium">(Your answer)</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {!passed && (
+            <div className="text-center">
+              <Button onClick={handleRetakeQuiz} className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                Retake Quiz
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5" />
+            {quiz.title}
+          </CardTitle>
+          <Badge variant="outline">
+            Question {currentQuestionIndex + 1} of {quiz.questions.length}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Progress</span>
+            <span>{Math.round(((currentQuestionIndex + 1) / quiz.questions.length) * 100)}%</span>
+          </div>
+          <Progress value={((currentQuestionIndex + 1) / quiz.questions.length) * 100} />
+        </div>
+
+        {/* Question */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">{currentQuestion.question}</h3>
+          
+          <div className="space-y-3">
+            {currentQuestion.options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleAnswerSelect(index)}
+                className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                  selectedAnswers[currentQuestionIndex] === index
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    selectedAnswers[currentQuestionIndex] === index
+                      ? 'border-blue-500 bg-blue-500'
+                      : 'border-gray-300'
+                  }`}>
+                    {selectedAnswers[currentQuestionIndex] === index && (
+                      <div className="w-full h-full rounded-full bg-white scale-50" />
+                    )}
+                  </div>
+                  <span>{option}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentQuestionIndex === 0}
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+          
+          <Button
+            onClick={handleNext}
+            disabled={!hasAnsweredCurrent}
+          >
+            {isLastQuestion ? 'Finish Quiz' : 'Next'}
+            {!isLastQuestion && <ChevronRight className="h-4 w-4 ml-2" />}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
