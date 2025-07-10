@@ -233,6 +233,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get specific enrollment for a course
+  app.get('/api/user/enrollments/:courseId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = parseInt(req.params.courseId);
+      const enrollment = await storage.getUserEnrollment(userId, courseId);
+      
+      if (!enrollment) {
+        return res.status(404).json({ message: "No enrollment found" });
+      }
+      
+      res.json(enrollment);
+    } catch (error) {
+      console.error("Error fetching enrollment:", error);
+      res.status(500).json({ message: "Failed to fetch enrollment" });
+    }
+  });
+
+  // Course viewer routes
+  app.get('/api/courses/:courseId/viewer', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const userId = req.user.claims.sub;
+      
+      // Check if user has access to this course
+      const hasAccess = await storage.hasPurchased(userId, courseId) || 
+                       await storage.getUserEnrollment(userId, courseId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied. Purchase course to view content." });
+      }
+      
+      const course = await storage.getCourseWithModulesAndLessons(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course viewer data:", error);
+      res.status(500).json({ message: "Failed to fetch course content" });
+    }
+  });
+
+  // Check course access endpoint
+  app.get('/api/user/course-access/:courseId', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const userId = req.user.claims.sub;
+      
+      const hasAccess = await storage.hasPurchased(userId, courseId) || 
+                       await storage.getUserEnrollment(userId, courseId);
+      
+      res.json(hasAccess);
+    } catch (error) {
+      console.error("Error checking course access:", error);
+      res.status(500).json({ message: "Failed to check course access" });
+    }
+  });
+
+  // Update lesson progress endpoint
+  app.post('/api/lessons/:lessonId/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const lessonId = parseInt(req.params.lessonId);
+      const userId = req.user.claims.sub;
+      const { isCompleted } = req.body;
+      
+      const progress = await storage.updateLessonProgress(userId, lessonId, isCompleted);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error updating lesson progress:", error);
+      res.status(500).json({ message: "Failed to update lesson progress" });
+    }
+  });
+
   app.put('/api/courses/:id/progress', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

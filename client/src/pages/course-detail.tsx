@@ -169,7 +169,7 @@ export default function CourseDetail() {
     }
     
     // Navigate to course viewer
-    setLocation(`/course/${id}`);
+    setLocation(`/courses/${id}/viewer`);
   };
 
   return (

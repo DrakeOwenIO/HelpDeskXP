@@ -1,5 +1,4 @@
 import { Switch, Route } from "wouter";
-import { lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,14 +9,14 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Courses from "@/pages/courses";
 import CourseDetail from "@/pages/course-detail";
+import CourseViewer from "@/pages/course-viewer";
 import Forum from "@/pages/forum";
 import ForumPost from "@/pages/forum-post";
 import CreatePost from "@/pages/create-post";
-import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCourses from "@/pages/admin/courses";
+import CourseBuilder from "@/pages/admin/course-builder";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
-import BlogManagement from "@/pages/admin/blog-management";
 import AccountManagement from "@/pages/admin/account-management";
 import Profile from "@/pages/profile";
 
@@ -42,17 +41,15 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/courses" component={Courses} />
           <Route path="/courses/:id" component={CourseDetail} />
+          <Route path="/courses/:courseId/viewer" component={CourseViewer} />
           <Route path="/forum" component={Forum} />
           <Route path="/forum/create" component={CreatePost} />
           <Route path="/forum/posts/:id" component={ForumPost} />
           <Route path="/blog" component={Blog} />
           <Route path="/blog/:id" component={BlogPost} />
-          <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/courses" component={AdminCourses} />
-          <Route path="/admin/blog" component={BlogManagement} />
+          <Route path="/admin/courses/:courseId/builder" component={CourseBuilder} />
           <Route path="/admin/accounts" component={AccountManagement} />
-          <Route path="/admin/course-builder/:courseId" component={lazy(() => import("@/pages/admin/course-builder"))} />
-          <Route path="/course/:courseId" component={lazy(() => import("@/pages/course-viewer"))} />
           <Route path="/profile" component={Profile} />
         </>
       )}
