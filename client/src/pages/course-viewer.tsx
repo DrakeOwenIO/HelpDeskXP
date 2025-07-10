@@ -196,10 +196,24 @@ export default function CourseViewer() {
 
   // Helper function to check if all quizzes in a lesson are passed
   const areAllQuizzesPassed = (lesson: CourseLesson) => {
-    if (!lesson.contentBlocks) return true; // No quizzes to check
+    if (!lesson.contentBlocks) {
+      // For development: check if this lesson has test quiz
+      if (process.env.NODE_ENV === 'development' && lesson.id === 1) {
+        const lessonQuizResults = quizResults[lesson.id] || {};
+        return lessonQuizResults["test-quiz-1"]?.passed === true;
+      }
+      return true; // No quizzes to check
+    }
     
     const quizBlocks = lesson.contentBlocks.filter(block => block.type === 'quiz');
-    if (quizBlocks.length === 0) return true; // No quizzes in this lesson
+    if (quizBlocks.length === 0) {
+      // For development: check if this lesson has test quiz
+      if (process.env.NODE_ENV === 'development' && lesson.id === 1) {
+        const lessonQuizResults = quizResults[lesson.id] || {};
+        return lessonQuizResults["test-quiz-1"]?.passed === true;
+      }
+      return true; // No quizzes in this lesson
+    }
     
     const lessonQuizResults = quizResults[lesson.id] || {};
     return quizBlocks.every(quizBlock => 
@@ -415,6 +429,7 @@ export default function CourseViewer() {
                     <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
                       <p><strong>Debug Course Structure:</strong></p>
                       <p><strong>Modules found:</strong> {course.modules.length}</p>
+                      <p><strong>All lessons:</strong> {allLessons.length}</p>
                       {course.modules.length === 0 && (
                         <p className="text-red-600 font-medium">⚠️ No published modules found! Module must be published for lessons to appear.</p>
                       )}
@@ -427,6 +442,9 @@ export default function CourseViewer() {
                             <p key={i}>Block {i + 1}: {block.type} (quiz data: {block.type === 'quiz' ? (block.quiz ? 'present' : 'missing') : 'n/a'})</p>
                           ))}
                           <p><strong>Content Type:</strong> {selectedLesson.contentType}</p>
+                          <p><strong>Quiz Results:</strong> {JSON.stringify(quizResults)}</p>
+                          <p><strong>Can Go Next:</strong> {canGoNext ? 'Yes' : 'No'}</p>
+                          <p><strong>Quiz Passed:</strong> {areAllQuizzesPassed(selectedLesson) ? 'Yes' : 'No'}</p>
                         </>
                       )}
                     </div>
