@@ -97,9 +97,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, email, password, firstName, lastName } = req.body;
       
       // Validate input
-      if (!username || !email || !password || !firstName || !lastName) {
-        return res.status(400).json({ message: "All fields are required" });
+      if (!username || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: "Username, password, first name, and last name are required" });
       }
+
+      // Make email optional for development, generate if not provided
+      const userEmail = email || `${username}@example.com`;
 
       // Check if user already exists
       const existingUserByUsername = await storage.getUserByUsername(username);
@@ -107,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username already taken" });
       }
 
-      const existingUserByEmail = await storage.getUserByEmail(email);
+      const existingUserByEmail = await storage.getUserByEmail(userEmail);
       if (existingUserByEmail) {
         return res.status(400).json({ message: "Email already registered" });
       }
@@ -118,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newUser = await storage.createUser({
         username,
-        email,
+        email: userEmail,
         password: hashedPassword,
         firstName,
         lastName,
@@ -135,23 +138,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { username, password } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
       }
 
-      // Find user by email
-      const user = await storage.getUserByEmail(email);
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
       if (!user) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return res.status(401).json({ message: "Invalid username or password" });
       }
 
       // Verify password
       const { verifyPassword } = await import('./auth');
       const isValid = await verifyPassword(password, user.password);
       if (!isValid) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return res.status(401).json({ message: "Invalid username or password" });
       }
 
       // Create session

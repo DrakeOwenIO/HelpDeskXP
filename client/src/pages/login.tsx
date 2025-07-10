@@ -8,10 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { LogIn, Mail, Lock } from "lucide-react";
+import { LogIn, User, Lock } from "lucide-react";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -25,7 +25,7 @@ export default function Login() {
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -51,7 +51,7 @@ export default function Login() {
         const errorData = await response.json();
         toast({
           title: "Login failed",
-          description: errorData.message || "Invalid email or password",
+          description: errorData.message || "Invalid username or password",
           variant: "destructive",
         });
       }
@@ -93,17 +93,16 @@ export default function Login() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+                          <User className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
                           <Input
                             {...field}
-                            type="email"
-                            placeholder="Enter your email"
+                            placeholder="Enter your username"
                             className="pl-10"
                             disabled={isLoading}
                           />
@@ -167,7 +166,7 @@ export default function Login() {
             Try the platform with the super admin account:
           </p>
           <div className="text-xs text-blue-600 space-y-1">
-            <div><strong>Email:</strong> drake@helpdeskxp.com</div>
+            <div><strong>Username:</strong> drake_owen</div>
             <div><strong>Password:</strong> securepassword123</div>
           </div>
         </div>

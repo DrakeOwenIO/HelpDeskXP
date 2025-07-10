@@ -161,6 +161,7 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<UserWithoutPassword | undefined> {
     const [user] = await db.select({
       id: users.id,
+      username: users.username,
       email: users.email,
       firstName: users.firstName,
       lastName: users.lastName,
@@ -215,6 +216,7 @@ export class DatabaseStorage implements IStorage {
   async getAllUsersWithCourseData(): Promise<(UserWithoutPassword & { enrollments: any[], purchases: any[] })[]> {
     const allUsers = await db.select({
       id: users.id,
+      username: users.username,
       email: users.email,
       firstName: users.firstName,
       lastName: users.lastName,

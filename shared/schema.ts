@@ -29,12 +29,13 @@ export const sessions = pgTable(
 // User storage table with local authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  username: varchar("username").unique().notNull(),
   email: varchar("email").unique().notNull(),
   password: varchar("password").notNull(), // hashed password
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  isEmailVerified: boolean("is_email_verified").default(false),
+  isEmailVerified: boolean("is_email_verified").default(true), // Skip email verification for development
   
   // Permission system
   canCreateBlogPosts: boolean("can_create_blog_posts").default(false),
