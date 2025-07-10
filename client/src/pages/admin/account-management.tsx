@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings, BookOpen, CreditCard, Plus, Gift } from "lucide-react";
+import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings, BookOpen, CreditCard } from "lucide-react";
 import { Link } from "wouter";
 
 interface User {
@@ -60,10 +60,9 @@ const PermissionBadge = ({ permission, label, icon: Icon }: {
   </Badge>
 );
 
-const UserPermissionsCard = ({ user, onUpdate, onGrantCourseAccess }: {
+const UserPermissionsCard = ({ user, onUpdate }: {
   user: User;
   onUpdate: (userId: string, permissions: UserPermissions) => void;
-  onGrantCourseAccess: (userId: string, courseId: number) => void;
 }) => {
   const [permissions, setPermissions] = useState<UserPermissions>({
     canCreateBlogPosts: user.canCreateBlogPosts,
@@ -261,20 +260,11 @@ const UserPermissionsCard = ({ user, onUpdate, onGrantCourseAccess }: {
 
             {/* Course Access Section */}
             <div className="border-t pt-3">
-              <div className="flex items-center justify-between mb-3">
+              <div className="mb-3">
                 <h4 className="text-sm font-medium text-neutral-900 flex items-center">
                   <BookOpen className="w-4 h-4 mr-1" />
                   Course Access
                 </h4>
-                <Button
-                  onClick={() => onGrantCourseAccess(user.id, 1)}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs"
-                >
-                  <Gift className="w-3 h-3 mr-1" />
-                  Grant Main Course
-                </Button>
               </div>
               
               {user.enrollments && user.enrollments.length > 0 ? (
@@ -485,7 +475,6 @@ export default function AccountManagement() {
             key={user.id}
             user={user}
             onUpdate={handleUpdatePermissions}
-            onGrantCourseAccess={handleGrantCourseAccess}
           />
         ))}
       </div>
