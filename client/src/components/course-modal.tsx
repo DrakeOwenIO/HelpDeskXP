@@ -41,7 +41,7 @@ export default function CourseModal({ course, isOpen, onClose }: CourseModalProp
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -75,7 +75,7 @@ export default function CourseModal({ course, isOpen, onClose }: CourseModalProp
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -94,7 +94,7 @@ export default function CourseModal({ course, isOpen, onClose }: CourseModalProp
 
   const handleStartCourse = () => {
     if (!isAuthenticated) {
-      window.location.href = "/api/login";
+      window.location.href = "/login";
       return;
     }
 

@@ -30,11 +30,21 @@ export default function Navigation() {
   const currentNavLinks = isAuthenticated ? authenticatedNavLinks : navLinks;
 
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
   };
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleSignUp = () => {
+    window.location.href = "/register";
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/";
+    }
   };
 
   return (
@@ -140,7 +150,7 @@ export default function Navigation() {
                 <Button variant="ghost" onClick={handleLogin} className="text-base font-medium">
                   Sign In
                 </Button>
-                <Button onClick={handleLogin} className="btn-primary px-6 py-2 text-base font-medium">
+                <Button onClick={handleSignUp} className="btn-primary px-6 py-2 text-base font-medium">
                   Get Started
                 </Button>
               </div>
@@ -213,7 +223,7 @@ export default function Navigation() {
                           Sign In
                         </Button>
                         <Button 
-                          onClick={handleLogin}
+                          onClick={handleSignUp}
                           className="w-full btn-primary"
                         >
                           Get Started

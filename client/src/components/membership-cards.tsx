@@ -11,7 +11,7 @@ export default function MembershipCards() {
     if (isAuthenticated) {
       window.location.href = "/courses";
     } else {
-      window.location.href = "/api/login";
+      window.location.href = "/login";
     }
   };
 
@@ -20,7 +20,7 @@ export default function MembershipCards() {
       // In a real implementation, this would handle subscription upgrade
       window.location.href = "/courses";
     } else {
-      window.location.href = "/api/login";
+      window.location.href = "/login";
     }
   };
 

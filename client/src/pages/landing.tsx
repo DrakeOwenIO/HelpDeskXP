@@ -24,7 +24,7 @@ export default function Landing() {
   ];
 
   const handleGetStarted = () => {
-    window.location.href = "/login";
+    window.location.href = "/register";
   };
 
   const handleEnrollNow = () => {
