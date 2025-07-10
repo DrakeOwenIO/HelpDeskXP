@@ -38,16 +38,22 @@ import {
   quizzes, type Quiz, type InsertQuiz,
   quizQuestions, type QuizQuestion, type InsertQuizQuestion,
   quizAttempts, type QuizAttempt, type InsertQuizAttempt,
+  type LocalUserRegistration,
+  type LocalUserLogin,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 // Interface for storage operations
 export interface IStorage {
   // User operations
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createLocalUser(userData: LocalUserRegistration): Promise<User>;
+  validateLocalUser(email: string, password: string): Promise<User | null>;
   updateUserProfile(userId: string, profile: { firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User>;
   
   // Account management operations
@@ -175,6 +181,44 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createLocalUser(userData: LocalUserRegistration): Promise<User> {
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+    
+    // Generate a unique ID for local users (prefixed with 'local_')
+    const localUserId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: localUserId,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        password: hashedPassword,
+        authType: 'local',
+        emailVerified: true, // For simplicity, consider local users verified
+      })
+      .returning();
+    return user;
+  }
+
+  async validateLocalUser(email: string, password: string): Promise<User | null> {
+    const user = await this.getUserByEmail(email);
+    if (!user || user.authType !== 'local' || !user.password) {
+      return null;
+    }
+    
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    return isValidPassword ? user : null;
   }
 
   async updateUserProfile(userId: string, profile: { firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User> {

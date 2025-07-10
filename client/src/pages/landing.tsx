@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Computer, Shield, Settings, Clock, Users, Star, CheckCircle, Play, Calendar, BookOpen, Award } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+  
   const courseHighlights = [
     {
       icon: Computer,
@@ -24,11 +27,11 @@ export default function Landing() {
   ];
 
   const handleGetStarted = () => {
-    window.location.href = "/api/login";
+    setLocation("/signup");
   };
 
   const handleEnrollNow = () => {
-    window.location.href = "/api/login";
+    setLocation("/signup");
   };
 
   return (

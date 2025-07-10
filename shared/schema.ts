@@ -34,6 +34,11 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  // Local auth fields
+  password: varchar("password"), // Hashed password for local accounts
+  authType: varchar("auth_type").default("replit").notNull(), // 'replit' or 'local'
+  emailVerified: boolean("email_verified").default(false),
+  // Permissions
   isPremium: boolean("is_premium").default(false),
   isAdmin: boolean("is_admin").default(false),
   // Individual permissions
@@ -228,6 +233,27 @@ export const quizAttempts = pgTable("quiz_attempts", {
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Local user registration schema
+export const localUserRegistrationSchema = createInsertSchema(users, {
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+}).pick({
+  email: true,
+  password: true,
+  firstName: true,
+  lastName: true,
+});
+
+export const localUserLoginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export type LocalUserRegistration = z.infer<typeof localUserRegistrationSchema>;
+export type LocalUserLogin = z.infer<typeof localUserLoginSchema>;
 
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = typeof courses.$inferInsert;

@@ -8,8 +8,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Menu, BookOpen, User, Settings, Shield, LogOut, Users } from "lucide-react";
 
 export default function Navigation() {
-  const [location] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const [location, setLocation] = useLocation();
+  const { user, isAuthenticated, authType } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -30,11 +30,23 @@ export default function Navigation() {
   const currentNavLinks = isAuthenticated ? authenticatedNavLinks : navLinks;
 
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    setLocation("/login");
   };
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    if (authType === 'local') {
+      // For local auth, use the local logout endpoint
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.reload();
+      } catch (error) {
+        console.error('Logout error:', error);
+        window.location.href = '/';
+      }
+    } else {
+      // For Replit auth, use the Replit logout endpoint
+      window.location.href = "/api/logout";
+    }
   };
 
   return (

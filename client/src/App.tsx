@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
+import Login from "@/pages/login";
+import SignUp from "@/pages/signup";
 import Courses from "@/pages/courses";
 import CourseDetail from "@/pages/course-detail";
 import CourseViewer from "@/pages/course-viewer";
@@ -31,6 +33,8 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
+          <Route path="/login" component={Login} />
+          <Route path="/signup" component={SignUp} />
           <Route path="/forum" component={Forum} />
           <Route path="/forum/create" component={CreatePost} />
           <Route path="/forum/posts/:id" component={ForumPost} />
