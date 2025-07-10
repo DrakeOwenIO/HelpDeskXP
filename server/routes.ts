@@ -428,6 +428,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Course builder API endpoints
+  app.get('/api/admin/courses/:courseId/structure', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      const modules = await storage.getCourseModules(courseId);
+      const modulesWithLessons = await Promise.all(
+        modules.map(async (module) => ({
+          ...module,
+          lessons: await storage.getModuleLessons(module.id)
+        }))
+      );
+      
+      res.json({
+        course,
+        modules: modulesWithLessons
+      });
+    } catch (error) {
+      console.error("Error fetching course structure:", error);
+      res.status(500).json({ message: "Failed to fetch course structure" });
+    }
+  });
+
+  // Module management endpoints
+  app.post('/api/admin/courses/:courseId/modules', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const moduleData = { ...req.body, courseId };
+      const module = await storage.createCourseModule(moduleData);
+      res.json(module);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+
+  app.put('/api/admin/courses/:courseId/modules/:moduleId', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      const module = await storage.updateCourseModule(moduleId, req.body);
+      res.json(module);
+    } catch (error) {
+      console.error("Error updating module:", error);
+      res.status(500).json({ message: "Failed to update module" });
+    }
+  });
+
+  app.delete('/api/admin/courses/:courseId/modules/:moduleId', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      await storage.deleteCourseModule(moduleId);
+      res.json({ message: "Module deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      res.status(500).json({ message: "Failed to delete module" });
+    }
+  });
+
+  // Lesson management endpoints
+  app.post('/api/admin/courses/:courseId/lessons', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const lesson = await storage.createCourseLesson(req.body);
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+
+  app.put('/api/admin/courses/:courseId/lessons/:lessonId', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const lessonId = parseInt(req.params.lessonId);
+      const lesson = await storage.updateCourseLesson(lessonId, req.body);
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(500).json({ message: "Failed to update lesson" });
+    }
+  });
+
+  app.delete('/api/admin/courses/:courseId/lessons/:lessonId', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const lessonId = parseInt(req.params.lessonId);
+      await storage.deleteCourseLesson(lessonId);
+      res.json({ message: "Lesson deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting lesson:", error);
+      res.status(500).json({ message: "Failed to delete lesson" });
+    }
+  });
+
   // Forum routes - public access for reading
   app.get("/api/forum/posts", async (req, res) => {
     try {

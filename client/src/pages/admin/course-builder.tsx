@@ -62,7 +62,7 @@ export default function CourseBuilder() {
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
 
   const { data: courseStructure, isLoading } = useQuery<CourseStructure>({
-    queryKey: ['/api/admin/courses', courseId, 'structure'],
+    queryKey: [`/api/admin/courses/${courseId}/structure`],
     enabled: !!courseId,
   });
 
@@ -71,7 +71,7 @@ export default function CourseBuilder() {
       return await apiRequest('POST', `/api/admin/courses/${courseId}/modules`, moduleData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/courses', courseId, 'structure'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
       setNewModuleTitle("");
       toast({
         title: "Module Created",
@@ -85,7 +85,7 @@ export default function CourseBuilder() {
       return await apiRequest('POST', `/api/admin/courses/${courseId}/lessons`, lessonData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/courses', courseId, 'structure'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
       setNewLessonTitle("");
       setSelectedModuleId(null);
       toast({
@@ -100,7 +100,7 @@ export default function CourseBuilder() {
       return await apiRequest('PUT', `/api/admin/courses/${courseId}/modules/${moduleId}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/courses', courseId, 'structure'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
       setEditingModule(null);
       toast({
         title: "Module Updated",
@@ -114,7 +114,7 @@ export default function CourseBuilder() {
       return await apiRequest('PUT', `/api/admin/courses/${courseId}/lessons/${lessonId}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/courses', courseId, 'structure'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
       setEditingLesson(null);
       toast({
         title: "Lesson Updated",
@@ -128,7 +128,7 @@ export default function CourseBuilder() {
       return await apiRequest('DELETE', `/api/admin/courses/${courseId}/modules/${moduleId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/courses', courseId, 'structure'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
       toast({
         title: "Module Deleted",
         description: "Module has been removed from the course.",
@@ -141,7 +141,7 @@ export default function CourseBuilder() {
       return await apiRequest('DELETE', `/api/admin/courses/${courseId}/lessons/${lessonId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/courses', courseId, 'structure'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
       toast({
         title: "Lesson Deleted",
         description: "Lesson has been removed from the module.",
