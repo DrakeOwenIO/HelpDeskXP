@@ -61,9 +61,10 @@ export default function CourseBuilder() {
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
 
-  const { data: courseStructure, isLoading } = useQuery<CourseStructure>({
+  const { data: courseStructure, isLoading, error } = useQuery<CourseStructure>({
     queryKey: [`/api/admin/courses/${courseId}/structure`],
     enabled: !!courseId,
+    retry: false,
   });
 
   const createModuleMutation = useMutation({
@@ -184,6 +185,26 @@ export default function CourseBuilder() {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('Course builder error:', error);
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Error Loading Course Builder</h2>
+          <p className="text-neutral-600 mb-4">
+            {error instanceof Error ? error.message : 'Unable to load course structure'}
+          </p>
+          <Link href="/admin/courses">
+            <Button variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Courses
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
