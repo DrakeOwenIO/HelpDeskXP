@@ -164,3 +164,4 @@ The application follows a monorepo structure with clear separation between clien
 - **Membership Removal**: Removed all membership references from course pages to focus on single fixed-price course model
 - **Price Display**: Hidden price section for users who have already purchased the course to improve user experience
 - **UI Color Updates**: Changed all hover colors and accent colors from red to blue for consistent branding throughout the application
+- **Course Access Count Fix**: Fixed account management to only count enrollments in course access, not purchases - purchases are still displayed separately under purchases section

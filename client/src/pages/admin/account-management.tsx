@@ -273,9 +273,9 @@ const UserPermissionsCard = ({ user, onUpdate }: {
                     <div className="flex items-center">
                       <BookOpen className="w-4 h-4 mr-1" />
                       Course Access
-                      {(user.enrollments?.length || 0) + (user.purchases?.length || 0) > 0 && (
+                      {(user.enrollments?.length || 0) > 0 && (
                         <Badge variant="secondary" className="ml-2 text-xs">
-                          {(user.enrollments?.length || 0) + (user.purchases?.length || 0)}
+                          {user.enrollments?.length || 0}
                         </Badge>
                       )}
                     </div>
