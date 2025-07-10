@@ -35,6 +35,9 @@ import {
   userLessonProgress,
   type UserLessonProgress,
   type InsertUserLessonProgress,
+  quizzes, type Quiz, type InsertQuiz,
+  quizQuestions, type QuizQuestion, type InsertQuizQuestion,
+  quizAttempts, type QuizAttempt, type InsertQuizAttempt,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -125,6 +128,27 @@ export interface IStorage {
   getUserLessonProgress(userId: string, lessonId: number): Promise<UserLessonProgress | undefined>;
   updateLessonProgress(userId: string, lessonId: number, isCompleted: boolean): Promise<UserLessonProgress>;
   getUserCourseProgress(userId: string, courseId: number): Promise<{ progress: number; completed: boolean }>;
+  
+  // Quiz and Test operations
+  getQuizzesByLesson(lessonId: number): Promise<Quiz[]>;
+  getQuizzesByModule(moduleId: number): Promise<Quiz[]>;
+  getQuiz(id: number): Promise<Quiz | undefined>;
+  createQuiz(quiz: InsertQuiz): Promise<Quiz>;
+  updateQuiz(id: number, updates: Partial<InsertQuiz>): Promise<Quiz>;
+  deleteQuiz(id: number): Promise<void>;
+  
+  getQuizQuestions(quizId: number): Promise<QuizQuestion[]>;
+  createQuizQuestion(question: InsertQuizQuestion): Promise<QuizQuestion>;
+  updateQuizQuestion(id: number, updates: Partial<InsertQuizQuestion>): Promise<QuizQuestion>;
+  deleteQuizQuestion(id: number): Promise<void>;
+  
+  getQuizAttempts(userId: string, quizId: number): Promise<QuizAttempt[]>;
+  getLatestQuizAttempt(userId: string, quizId: number): Promise<QuizAttempt | undefined>;
+  createQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt>;
+  updateQuizAttempt(id: number, updates: Partial<InsertQuizAttempt>): Promise<QuizAttempt>;
+  
+  canAccessLesson(userId: string, lessonId: number): Promise<boolean>;
+  canAccessModule(userId: string, moduleId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -845,6 +869,138 @@ export class DatabaseStorage implements IStorage {
     const completed = progress === 100;
 
     return { progress, completed };
+  }
+
+  // Quiz and Test operations
+  async getQuizzesByLesson(lessonId: number): Promise<Quiz[]> {
+    return await db.select().from(quizzes).where(eq(quizzes.lessonId, lessonId));
+  }
+
+  async getQuizzesByModule(moduleId: number): Promise<Quiz[]> {
+    return await db.select().from(quizzes).where(eq(quizzes.moduleId, moduleId));
+  }
+
+  async getQuiz(id: number): Promise<Quiz | undefined> {
+    const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, id));
+    return quiz;
+  }
+
+  async createQuiz(quiz: InsertQuiz): Promise<Quiz> {
+    const [createdQuiz] = await db.insert(quizzes).values(quiz).returning();
+    return createdQuiz;
+  }
+
+  async updateQuiz(id: number, updates: Partial<InsertQuiz>): Promise<Quiz> {
+    const [updatedQuiz] = await db
+      .update(quizzes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(quizzes.id, id))
+      .returning();
+    return updatedQuiz;
+  }
+
+  async deleteQuiz(id: number): Promise<void> {
+    await db.delete(quizzes).where(eq(quizzes.id, id));
+  }
+
+  async getQuizQuestions(quizId: number): Promise<QuizQuestion[]> {
+    return await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId)).orderBy(quizQuestions.orderIndex);
+  }
+
+  async createQuizQuestion(question: InsertQuizQuestion): Promise<QuizQuestion> {
+    const [createdQuestion] = await db.insert(quizQuestions).values(question).returning();
+    return createdQuestion;
+  }
+
+  async updateQuizQuestion(id: number, updates: Partial<InsertQuizQuestion>): Promise<QuizQuestion> {
+    const [updatedQuestion] = await db
+      .update(quizQuestions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(quizQuestions.id, id))
+      .returning();
+    return updatedQuestion;
+  }
+
+  async deleteQuizQuestion(id: number): Promise<void> {
+    await db.delete(quizQuestions).where(eq(quizQuestions.id, id));
+  }
+
+  async getQuizAttempts(userId: string, quizId: number): Promise<QuizAttempt[]> {
+    return await db.select().from(quizAttempts)
+      .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.quizId, quizId)))
+      .orderBy(desc(quizAttempts.createdAt));
+  }
+
+  async getLatestQuizAttempt(userId: string, quizId: number): Promise<QuizAttempt | undefined> {
+    const [attempt] = await db.select().from(quizAttempts)
+      .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.quizId, quizId)))
+      .orderBy(desc(quizAttempts.createdAt))
+      .limit(1);
+    return attempt;
+  }
+
+  async createQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt> {
+    const [createdAttempt] = await db.insert(quizAttempts).values(attempt).returning();
+    return createdAttempt;
+  }
+
+  async updateQuizAttempt(id: number, updates: Partial<InsertQuizAttempt>): Promise<QuizAttempt> {
+    const [updatedAttempt] = await db
+      .update(quizAttempts)
+      .set(updates)
+      .where(eq(quizAttempts.id, id))
+      .returning();
+    return updatedAttempt;
+  }
+
+  async canAccessLesson(userId: string, lessonId: number): Promise<boolean> {
+    // Check if user has passed the previous lesson's quiz (if it exists)
+    const lesson = await db.select().from(courseLessons).where(eq(courseLessons.id, lessonId)).limit(1);
+    if (!lesson.length) return false;
+    
+    const previousLessons = await db.select().from(courseLessons)
+      .where(and(
+        eq(courseLessons.moduleId, lesson[0].moduleId),
+        sql`${courseLessons.orderIndex} < ${lesson[0].orderIndex}`
+      ))
+      .orderBy(desc(courseLessons.orderIndex))
+      .limit(1);
+    
+    if (!previousLessons.length) return true; // First lesson in module
+    
+    const previousQuiz = await db.select().from(quizzes)
+      .where(eq(quizzes.lessonId, previousLessons[0].id))
+      .limit(1);
+    
+    if (!previousQuiz.length) return true; // No quiz for previous lesson
+    
+    const latestAttempt = await this.getLatestQuizAttempt(userId, previousQuiz[0].id);
+    return latestAttempt?.passed || false;
+  }
+
+  async canAccessModule(userId: string, moduleId: number): Promise<boolean> {
+    // Check if user has passed the previous module's test (if it exists)
+    const module = await db.select().from(courseModules).where(eq(courseModules.id, moduleId)).limit(1);
+    if (!module.length) return false;
+    
+    const previousModules = await db.select().from(courseModules)
+      .where(and(
+        eq(courseModules.courseId, module[0].courseId),
+        sql`${courseModules.orderIndex} < ${module[0].orderIndex}`
+      ))
+      .orderBy(desc(courseModules.orderIndex))
+      .limit(1);
+    
+    if (!previousModules.length) return true; // First module in course
+    
+    const previousTest = await db.select().from(quizzes)
+      .where(eq(quizzes.moduleId, previousModules[0].id))
+      .limit(1);
+    
+    if (!previousTest.length) return true; // No test for previous module
+    
+    const latestAttempt = await this.getLatestQuizAttempt(userId, previousTest[0].id);
+    return latestAttempt?.passed || false;
   }
 }
 

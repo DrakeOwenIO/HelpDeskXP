@@ -183,6 +183,48 @@ export const userLessonProgress = pgTable("user_lesson_progress", {
   unique("unique_user_lesson").on(table.userId, table.lessonId)
 ]);
 
+// Quiz and Test tables
+export const quizzes = pgTable("quizzes", {
+  id: serial("id").primaryKey(),
+  lessonId: integer("lesson_id").references(() => courseLessons.id, { onDelete: 'cascade' }),
+  moduleId: integer("module_id").references(() => courseModules.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 20 }).notNull(), // 'lesson_quiz' or 'module_test'
+  passingScore: integer("passing_score").notNull().default(80), // 80% for quizzes, 70% for tests
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const quizQuestions = pgTable("quiz_questions", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").notNull().references(() => quizzes.id, { onDelete: 'cascade' }),
+  question: text("question").notNull(),
+  questionType: varchar("question_type", { length: 20 }).notNull().default('multiple_choice'), // 'multiple_choice', 'true_false', 'short_answer'
+  options: text("options").array(), // JSON array of options for multiple choice
+  correctAnswers: text("correct_answers").array(), // Array of correct answers
+  points: integer("points").default(1),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const quizAttempts = pgTable("quiz_attempts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  quizId: integer("quiz_id").notNull().references(() => quizzes.id, { onDelete: 'cascade' }),
+  score: integer("score").notNull().default(0), // Percentage score
+  totalPoints: integer("total_points").notNull(),
+  earnedPoints: integer("earned_points").notNull(),
+  passed: boolean("passed").default(false),
+  answers: jsonb("answers").notNull(), // User's answers
+  attemptNumber: integer("attempt_number").notNull().default(1),
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
@@ -219,6 +261,16 @@ export type InsertCourseLesson = typeof courseLessons.$inferInsert;
 
 export type UserLessonProgress = typeof userLessonProgress.$inferSelect;
 export type InsertUserLessonProgress = typeof userLessonProgress.$inferInsert;
+
+// Quiz and Test types
+export type Quiz = typeof quizzes.$inferSelect;
+export type InsertQuiz = typeof quizzes.$inferInsert;
+
+export type QuizQuestion = typeof quizQuestions.$inferSelect;
+export type InsertQuizQuestion = typeof quizQuestions.$inferInsert;
+
+export type QuizAttempt = typeof quizAttempts.$inferSelect;
+export type InsertQuizAttempt = typeof quizAttempts.$inferInsert;
 
 export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
@@ -287,4 +339,21 @@ export const insertUserLessonProgressSchema = createInsertSchema(userLessonProgr
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertQuizSchema = createInsertSchema(quizzes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertQuizQuestionSchema = createInsertSchema(quizQuestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertQuizAttemptSchema = createInsertSchema(quizAttempts).omit({
+  id: true,
+  createdAt: true,
 });

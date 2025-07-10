@@ -632,6 +632,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quiz and Test Management API routes
+  
+  // Create quiz for lesson or test for module
+  app.post('/api/admin/quizzes', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { title, description, type, lessonId, moduleId, passingScore } = req.body;
+      
+      if (!title || !type) {
+        return res.status(400).json({ message: "Title and type are required" });
+      }
+      
+      if (type === 'lesson_quiz' && !lessonId) {
+        return res.status(400).json({ message: "Lesson ID is required for quizzes" });
+      }
+      
+      if (type === 'module_test' && !moduleId) {
+        return res.status(400).json({ message: "Module ID is required for tests" });
+      }
+
+      const quiz = await storage.createQuiz({
+        title,
+        description,
+        type,
+        lessonId: type === 'lesson_quiz' ? lessonId : null,
+        moduleId: type === 'module_test' ? moduleId : null,
+        passingScore: passingScore || (type === 'lesson_quiz' ? 80 : 70),
+        isPublished: false,
+      });
+
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      res.status(500).json({ message: "Failed to create quiz" });
+    }
+  });
+
+  // Get quiz by ID with questions
+  app.get('/api/admin/quizzes/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizId = parseInt(req.params.id);
+      const quiz = await storage.getQuiz(quizId);
+      
+      if (!quiz) {
+        return res.status(404).json({ message: "Quiz not found" });
+      }
+
+      const questions = await storage.getQuizQuestions(quizId);
+      res.json({ ...quiz, questions });
+    } catch (error) {
+      console.error("Error fetching quiz:", error);
+      res.status(500).json({ message: "Failed to fetch quiz" });
+    }
+  });
+
+  // Update quiz
+  app.put('/api/admin/quizzes/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const quiz = await storage.updateQuiz(quizId, updates);
+      res.json(quiz);
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+      res.status(500).json({ message: "Failed to update quiz" });
+    }
+  });
+
+  // Delete quiz
+  app.delete('/api/admin/quizzes/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizId = parseInt(req.params.id);
+      await storage.deleteQuiz(quizId);
+      res.json({ message: "Quiz deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      res.status(500).json({ message: "Failed to delete quiz" });
+    }
+  });
+
+  // Create quiz question
+  app.post('/api/admin/quizzes/:id/questions', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const quizId = parseInt(req.params.id);
+      const { question, questionType, options, correctAnswers, points } = req.body;
+      
+      if (!question || !questionType) {
+        return res.status(400).json({ message: "Question and question type are required" });
+      }
+
+      const questionData = await storage.createQuizQuestion({
+        quizId,
+        question,
+        questionType,
+        options: options || [],
+        correctAnswers: correctAnswers || [],
+        points: points || 1,
+        orderIndex: 0, // Will be updated based on existing questions
+      });
+
+      res.json(questionData);
+    } catch (error) {
+      console.error("Error creating quiz question:", error);
+      res.status(500).json({ message: "Failed to create quiz question" });
+    }
+  });
+
+  // Update quiz question
+  app.put('/api/admin/quiz-questions/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const question = await storage.updateQuizQuestion(questionId, updates);
+      res.json(question);
+    } catch (error) {
+      console.error("Error updating quiz question:", error);
+      res.status(500).json({ message: "Failed to update quiz question" });
+    }
+  });
+
+  // Delete quiz question
+  app.delete('/api/admin/quiz-questions/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.id);
+      await storage.deleteQuizQuestion(questionId);
+      res.json({ message: "Question deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting quiz question:", error);
+      res.status(500).json({ message: "Failed to delete quiz question" });
+    }
+  });
+
+  // Get quizzes by lesson
+  app.get('/api/lessons/:id/quizzes', isAuthenticated, async (req, res) => {
+    try {
+      const lessonId = parseInt(req.params.id);
+      const quizzes = await storage.getQuizzesByLesson(lessonId);
+      res.json(quizzes);
+    } catch (error) {
+      console.error("Error fetching lesson quizzes:", error);
+      res.status(500).json({ message: "Failed to fetch lesson quizzes" });
+    }
+  });
+
+  // Get tests by module
+  app.get('/api/modules/:id/tests', isAuthenticated, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.id);
+      const tests = await storage.getQuizzesByModule(moduleId);
+      res.json(tests);
+    } catch (error) {
+      console.error("Error fetching module tests:", error);
+      res.status(500).json({ message: "Failed to fetch module tests" });
+    }
+  });
+
   // Forum routes - public access for reading
   app.get("/api/forum/posts", async (req, res) => {
     try {

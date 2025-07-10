@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Plus, Edit, Trash2, Save, GripVertical, Play, FileText, Video, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Plus, Edit, Trash2, Save, GripVertical, Play, FileText, Video, CheckCircle, HelpCircle, Target } from "lucide-react";
 import { Link } from "wouter";
 
 interface CourseModule {
@@ -38,6 +41,28 @@ interface Lesson {
   updatedAt: string;
 }
 
+interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+  type: 'lesson_quiz' | 'module_test';
+  passingScore: number;
+  isPublished: boolean;
+  lessonId?: number;
+  moduleId?: number;
+  questions?: QuizQuestion[];
+}
+
+interface QuizQuestion {
+  id: number;
+  question: string;
+  questionType: 'multiple_choice' | 'true_false' | 'short_answer';
+  options: string[];
+  correctAnswers: string[];
+  points: number;
+  orderIndex: number;
+}
+
 interface CourseStructure {
   course: {
     id: number;
@@ -60,6 +85,19 @@ export default function CourseBuilder() {
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [newLessonTitle, setNewLessonTitle] = useState("");
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+  
+  // Quiz/Test management state
+  const [createQuizOpen, setCreateQuizOpen] = useState(false);
+  const [editQuizOpen, setEditQuizOpen] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+  const [quizForm, setQuizForm] = useState({
+    title: "",
+    description: "",
+    type: "lesson_quiz" as "lesson_quiz" | "module_test",
+    lessonId: null as number | null,
+    moduleId: null as number | null,
+    passingScore: 80,
+  });
 
   const { data: courseStructure, isLoading, error } = useQuery<CourseStructure>({
     queryKey: [`/api/admin/courses/${courseId}/structure`],
@@ -146,6 +184,36 @@ export default function CourseBuilder() {
       toast({
         title: "Lesson Deleted",
         description: "Lesson has been removed from the module.",
+      });
+    },
+  });
+
+  // Quiz/Test mutations
+  const createQuizMutation = useMutation({
+    mutationFn: async (quizData: any) => {
+      return await apiRequest('POST', '/api/admin/quizzes', quizData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
+      setCreateQuizOpen(false);
+      setQuizForm({
+        title: "",
+        description: "",
+        type: "lesson_quiz",
+        lessonId: null,
+        moduleId: null,
+        passingScore: 80,
+      });
+      toast({
+        title: "Quiz Created",
+        description: "Quiz has been added successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create quiz.",
+        variant: "destructive",
       });
     },
   });
@@ -316,20 +384,58 @@ export default function CourseBuilder() {
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setQuizForm({
+                                  title: `${lesson.title} Quiz`,
+                                  description: `Quiz for ${lesson.title}`,
+                                  type: "lesson_quiz",
+                                  lessonId: lesson.id,
+                                  moduleId: null,
+                                  passingScore: 80,
+                                });
+                                setCreateQuizOpen(true);
+                              }}
+                            >
+                              <HelpCircle className="w-3 h-3" />
+                            </Button>
                           </div>
                         </div>
                       ))}
                       
-                      {/* Add Lesson Button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedModuleId(module.id)}
-                        className="w-full mt-2"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Lesson
-                      </Button>
+                      {/* Add Lesson and Module Test Buttons */}
+                      <div className="mt-3 pt-3 border-t flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedModuleId(module.id)}
+                          className="flex-1"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Lesson
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setQuizForm({
+                              title: `${module.title} Test`,
+                              description: `Module test for ${module.title}`,
+                              type: "module_test",
+                              lessonId: null,
+                              moduleId: module.id,
+                              passingScore: 70,
+                            });
+                            setCreateQuizOpen(true);
+                          }}
+                          className="flex-1"
+                        >
+                          <Target className="w-4 h-4 mr-2" />
+                          Add Test
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -462,6 +568,72 @@ export default function CourseBuilder() {
             </Card>
           </div>
         </div>
+        
+        {/* Quiz Creation Dialog */}
+        <Dialog open={createQuizOpen} onOpenChange={setCreateQuizOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                Create {quizForm.type === 'lesson_quiz' ? 'Quiz' : 'Test'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="quiz-title">Title</Label>
+                <Input
+                  id="quiz-title"
+                  value={quizForm.title}
+                  onChange={(e) => setQuizForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter quiz title"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="quiz-description">Description</Label>
+                <Textarea
+                  id="quiz-description"
+                  value={quizForm.description}
+                  onChange={(e) => setQuizForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter quiz description"
+                  rows={3}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="passing-score">Passing Score (%)</Label>
+                <Input
+                  id="passing-score"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={quizForm.passingScore}
+                  onChange={(e) => setQuizForm(prev => ({ ...prev, passingScore: parseInt(e.target.value) || 80 }))}
+                />
+                <p className="text-sm text-neutral-600 mt-1">
+                  {quizForm.type === 'lesson_quiz' 
+                    ? 'Recommended: 80% for lesson quizzes' 
+                    : 'Recommended: 70% for module tests'
+                  }
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCreateQuizOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => createQuizMutation.mutate(quizForm)}
+                  disabled={createQuizMutation.isPending || !quizForm.title.trim()}
+                >
+                  {createQuizMutation.isPending ? "Creating..." : `Create ${quizForm.type === 'lesson_quiz' ? 'Quiz' : 'Test'}`}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
