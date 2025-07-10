@@ -26,6 +26,15 @@ import {
   blogComments,
   type BlogComment,
   type InsertBlogComment,
+  courseModules,
+  type CourseModule,
+  type InsertCourseModule,
+  courseLessons,
+  type CourseLesson,
+  type InsertCourseLesson,
+  userLessonProgress,
+  type UserLessonProgress,
+  type InsertUserLessonProgress,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -99,6 +108,23 @@ export interface IStorage {
   getBlogComments(postId: number): Promise<(BlogComment & { authorName: string })[]>;
   createBlogComment(comment: InsertBlogComment): Promise<BlogComment>;
   deleteBlogComment(id: number): Promise<void>;
+  
+  // Course builder operations
+  getCourseModules(courseId: number): Promise<CourseModule[]>;
+  createCourseModule(module: InsertCourseModule): Promise<CourseModule>;
+  updateCourseModule(id: number, updates: Partial<InsertCourseModule>): Promise<CourseModule>;
+  deleteCourseModule(id: number): Promise<void>;
+  
+  getModuleLessons(moduleId: number): Promise<CourseLesson[]>;
+  createCourseLesson(lesson: InsertCourseLesson): Promise<CourseLesson>;
+  updateCourseLesson(id: number, updates: Partial<InsertCourseLesson>): Promise<CourseLesson>;
+  deleteCourseLesson(id: number): Promise<void>;
+  
+  // Course viewer operations
+  getCourseWithModulesAndLessons(courseId: number): Promise<Course & { modules: (CourseModule & { lessons: CourseLesson[] })[] } | undefined>;
+  getUserLessonProgress(userId: string, lessonId: number): Promise<UserLessonProgress | undefined>;
+  updateLessonProgress(userId: string, lessonId: number, isCompleted: boolean): Promise<UserLessonProgress>;
+  getUserCourseProgress(userId: string, courseId: number): Promise<{ progress: number; completed: boolean }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -681,6 +707,144 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBlogComment(id: number): Promise<void> {
     await db.delete(blogComments).where(eq(blogComments.id, id));
+  }
+
+  // Course builder operations
+  async getCourseModules(courseId: number): Promise<CourseModule[]> {
+    return await db.select().from(courseModules)
+      .where(eq(courseModules.courseId, courseId))
+      .orderBy(courseModules.orderIndex);
+  }
+
+  async createCourseModule(module: InsertCourseModule): Promise<CourseModule> {
+    const [created] = await db.insert(courseModules).values(module).returning();
+    return created;
+  }
+
+  async updateCourseModule(id: number, updates: Partial<InsertCourseModule>): Promise<CourseModule> {
+    const [updated] = await db.update(courseModules)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(courseModules.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCourseModule(id: number): Promise<void> {
+    await db.delete(courseModules).where(eq(courseModules.id, id));
+  }
+
+  async getModuleLessons(moduleId: number): Promise<CourseLesson[]> {
+    return await db.select().from(courseLessons)
+      .where(eq(courseLessons.moduleId, moduleId))
+      .orderBy(courseLessons.orderIndex);
+  }
+
+  async createCourseLesson(lesson: InsertCourseLesson): Promise<CourseLesson> {
+    const [created] = await db.insert(courseLessons).values(lesson).returning();
+    return created;
+  }
+
+  async updateCourseLesson(id: number, updates: Partial<InsertCourseLesson>): Promise<CourseLesson> {
+    const [updated] = await db.update(courseLessons)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(courseLessons.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCourseLesson(id: number): Promise<void> {
+    await db.delete(courseLessons).where(eq(courseLessons.id, id));
+  }
+
+  // Course viewer operations
+  async getCourseWithModulesAndLessons(courseId: number): Promise<Course & { modules: (CourseModule & { lessons: CourseLesson[] })[] } | undefined> {
+    const course = await this.getCourse(courseId);
+    if (!course) return undefined;
+
+    const modules = await db.select().from(courseModules)
+      .where(eq(courseModules.courseId, courseId))
+      .orderBy(courseModules.orderIndex);
+
+    const modulesWithLessons = await Promise.all(
+      modules.map(async (module) => {
+        const lessons = await db.select().from(courseLessons)
+          .where(eq(courseLessons.moduleId, module.id))
+          .orderBy(courseLessons.orderIndex);
+        return { ...module, lessons };
+      })
+    );
+
+    return { ...course, modules: modulesWithLessons };
+  }
+
+  async getUserLessonProgress(userId: string, lessonId: number): Promise<UserLessonProgress | undefined> {
+    const [progress] = await db.select().from(userLessonProgress)
+      .where(and(
+        eq(userLessonProgress.userId, userId),
+        eq(userLessonProgress.lessonId, lessonId)
+      ));
+    return progress;
+  }
+
+  async updateLessonProgress(userId: string, lessonId: number, isCompleted: boolean): Promise<UserLessonProgress> {
+    const existing = await this.getUserLessonProgress(userId, lessonId);
+    
+    if (existing) {
+      const [updated] = await db.update(userLessonProgress)
+        .set({ 
+          isCompleted, 
+          completedAt: isCompleted ? new Date() : null,
+          updatedAt: new Date() 
+        })
+        .where(and(
+          eq(userLessonProgress.userId, userId),
+          eq(userLessonProgress.lessonId, lessonId)
+        ))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(userLessonProgress)
+        .values({
+          userId,
+          lessonId,
+          isCompleted,
+          completedAt: isCompleted ? new Date() : null,
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async getUserCourseProgress(userId: string, courseId: number): Promise<{ progress: number; completed: boolean }> {
+    // Get all lessons for the course
+    const modules = await db.select().from(courseModules)
+      .where(eq(courseModules.courseId, courseId));
+    
+    const allLessons = [];
+    for (const module of modules) {
+      const lessons = await db.select().from(courseLessons)
+        .where(eq(courseLessons.moduleId, module.id));
+      allLessons.push(...lessons);
+    }
+
+    if (allLessons.length === 0) {
+      return { progress: 0, completed: false };
+    }
+
+    // Get user progress for all lessons
+    const completedLessons = await db.select().from(userLessonProgress)
+      .where(and(
+        eq(userLessonProgress.userId, userId),
+        eq(userLessonProgress.isCompleted, true)
+      ));
+
+    const completedLessonIds = new Set(completedLessons.map(p => p.lessonId));
+    const courseCompletedLessons = allLessons.filter(lesson => completedLessonIds.has(lesson.id));
+    
+    const progress = Math.round((courseCompletedLessons.length / allLessons.length) * 100);
+    const completed = progress === 100;
+
+    return { progress, completed };
   }
 }
 

@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ import type { Course, Enrollment } from "@shared/schema";
 
 export default function CourseDetail() {
   const { id } = useParams();
+  const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -167,11 +168,8 @@ export default function CourseDetail() {
       return;
     }
     
-    // Navigate to course player (would be implemented)
-    toast({
-      title: "Starting Course",
-      description: "Course player would open here.",
-    });
+    // Navigate to course viewer
+    setLocation(`/course/${id}`);
   };
 
   return (

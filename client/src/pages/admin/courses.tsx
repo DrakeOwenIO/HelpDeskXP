@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Settings } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertCourseSchema, type Course, type InsertCourse } from "@shared/schema";
@@ -600,6 +600,16 @@ export default function AdminCourses() {
                       >
                         {course.isPublished ? "Published" : "Draft"}
                       </Badge>
+                      <Link href={`/admin/course-builder/${course.id}`}>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Course Builder
+                        </Button>
+                      </Link>
                       <Button 
                         variant="ghost" 
                         size="sm"

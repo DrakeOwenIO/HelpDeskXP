@@ -1,4 +1,5 @@
 import { Switch, Route } from "wouter";
+import { lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -50,6 +51,8 @@ function Router() {
           <Route path="/admin/courses" component={AdminCourses} />
           <Route path="/admin/blog" component={BlogManagement} />
           <Route path="/admin/accounts" component={AccountManagement} />
+          <Route path="/admin/course-builder/:courseId" component={lazy(() => import("@/pages/admin/course-builder"))} />
+          <Route path="/course/:courseId" component={lazy(() => import("@/pages/course-viewer"))} />
           <Route path="/profile" component={Profile} />
         </>
       )}

@@ -33,7 +33,7 @@ const upload = multer({
     }
   }
 });
-import { insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema, insertForumPostSchema, insertForumReplySchema, insertBlogPostSchema, insertBlogCommentSchema } from "@shared/schema";
+import { insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema, insertForumPostSchema, insertForumReplySchema, insertBlogPostSchema, insertBlogCommentSchema, insertCourseModuleSchema, insertCourseLessonSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -661,6 +661,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error granting course access:", error);
       res.status(500).json({ message: "Failed to grant course access" });
+    }
+  });
+
+  // Course builder routes
+  app.get('/api/courses/:courseId/modules', isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const modules = await storage.getCourseModules(courseId);
+      res.json(modules);
+    } catch (error) {
+      console.error("Error fetching course modules:", error);
+      res.status(500).json({ message: "Failed to fetch course modules" });
+    }
+  });
+
+  app.post('/api/courses/:courseId/modules', isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const moduleData = insertCourseModuleSchema.parse({
+        ...req.body,
+        courseId,
+      });
+      
+      const module = await storage.createCourseModule(moduleData);
+      res.status(201).json(module);
+    } catch (error) {
+      console.error("Error creating course module:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid module data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create course module" });
+    }
+  });
+
+  app.patch('/api/modules/:moduleId', isAuthenticated, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      const updates = req.body;
+      
+      const module = await storage.updateCourseModule(moduleId, updates);
+      res.json(module);
+    } catch (error) {
+      console.error("Error updating course module:", error);
+      res.status(500).json({ message: "Failed to update course module" });
+    }
+  });
+
+  app.delete('/api/modules/:moduleId', isAuthenticated, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      await storage.deleteCourseModule(moduleId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting course module:", error);
+      res.status(500).json({ message: "Failed to delete course module" });
+    }
+  });
+
+  app.get('/api/modules/:moduleId/lessons', isAuthenticated, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      const lessons = await storage.getModuleLessons(moduleId);
+      res.json(lessons);
+    } catch (error) {
+      console.error("Error fetching module lessons:", error);
+      res.status(500).json({ message: "Failed to fetch module lessons" });
+    }
+  });
+
+  app.post('/api/modules/:moduleId/lessons', isAuthenticated, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      const lessonData = insertCourseLessonSchema.parse({
+        ...req.body,
+        moduleId,
+      });
+      
+      const lesson = await storage.createCourseLesson(lessonData);
+      res.status(201).json(lesson);
+    } catch (error) {
+      console.error("Error creating course lesson:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid lesson data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create course lesson" });
+    }
+  });
+
+  app.patch('/api/lessons/:lessonId', isAuthenticated, async (req, res) => {
+    try {
+      const lessonId = parseInt(req.params.lessonId);
+      const updates = req.body;
+      
+      const lesson = await storage.updateCourseLesson(lessonId, updates);
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error updating course lesson:", error);
+      res.status(500).json({ message: "Failed to update course lesson" });
+    }
+  });
+
+  app.delete('/api/lessons/:lessonId', isAuthenticated, async (req, res) => {
+    try {
+      const lessonId = parseInt(req.params.lessonId);
+      await storage.deleteCourseLesson(lessonId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting course lesson:", error);
+      res.status(500).json({ message: "Failed to delete course lesson" });
+    }
+  });
+
+  // Course viewer routes
+  app.get('/api/courses/:courseId/viewer', isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const course = await storage.getCourseWithModulesAndLessons(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course for viewer:", error);
+      res.status(500).json({ message: "Failed to fetch course" });
+    }
+  });
+
+  app.get('/api/user/enrollments/:courseId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = parseInt(req.params.courseId);
+      
+      const enrollment = await storage.getUserEnrollment(userId, courseId);
+      if (!enrollment) {
+        return res.status(404).json({ message: "No enrollment found" });
+      }
+      
+      // Get updated progress
+      const progressData = await storage.getUserCourseProgress(userId, courseId);
+      
+      res.json({
+        ...enrollment,
+        progress: progressData.progress,
+        completed: progressData.completed,
+      });
+    } catch (error) {
+      console.error("Error fetching user enrollment:", error);
+      res.status(500).json({ message: "Failed to fetch enrollment" });
+    }
+  });
+
+  app.get('/api/user/course-access/:courseId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = parseInt(req.params.courseId);
+      
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Check if user has access (enrolled, purchased, or course is free)
+      const enrollment = await storage.getUserEnrollment(userId, courseId);
+      const hasPurchased = await storage.hasPurchased(userId, courseId);
+      const hasAccess = course.isFree || !!enrollment || hasPurchased;
+      
+      res.json(hasAccess);
+    } catch (error) {
+      console.error("Error checking course access:", error);
+      res.status(500).json({ message: "Failed to check course access" });
+    }
+  });
+
+  app.post('/api/lessons/:lessonId/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const lessonId = parseInt(req.params.lessonId);
+      const { isCompleted } = req.body;
+      
+      const progress = await storage.updateLessonProgress(userId, lessonId, isCompleted);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error updating lesson progress:", error);
+      res.status(500).json({ message: "Failed to update lesson progress" });
     }
   });
 
