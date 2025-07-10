@@ -431,6 +431,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Course not found" });
       }
       
+      // Debug: Log course preview structure (shows ALL content including drafts)
+      console.log(`=== Course Preview Debug for Course ${courseId} ===`);
+      console.log(`Modules found: ${course.modules.length} (including drafts)`);
+      course.modules.forEach((module, moduleIndex) => {
+        console.log(`  Module ${moduleIndex + 1}: "${module.title}" (Published: ${module.isPublished})`);
+        console.log(`    Lessons: ${module.lessons.length} (including drafts)`);
+        module.lessons.forEach((lesson, lessonIndex) => {
+          console.log(`      Lesson ${lessonIndex + 1}: "${lesson.title}" (Published: ${lesson.isPublished})`);
+          console.log(`        Content Blocks: ${lesson.contentBlocks ? JSON.parse(JSON.stringify(lesson.contentBlocks)).length : 0}`);
+          if (lesson.contentBlocks) {
+            const blocks = JSON.parse(JSON.stringify(lesson.contentBlocks));
+            blocks.forEach((block: any, blockIndex: number) => {
+              console.log(`          Block ${blockIndex + 1}: ${block.type} ${block.type === 'quiz' ? `(Quiz: ${block.quiz ? 'present' : 'missing'})` : ''}`);
+            });
+          }
+        });
+      });
+      console.log(`=== End Course Preview Debug ===`);
+      
       res.json(course);
     } catch (error) {
       console.error("Error fetching course preview:", error);

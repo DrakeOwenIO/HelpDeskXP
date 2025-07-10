@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, CheckCircle2, Play, Clock, FileText, Video, Award, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Link } from "wouter";
 import type { Course, CourseModule, CourseLesson } from "@shared/schema";
+import QuizPlayer from "@/components/quiz-player";
 
 interface CourseWithContent extends Course {
   modules: (CourseModule & {
@@ -277,6 +278,14 @@ export default function CoursePreview() {
                                     Your browser does not support the video tag.
                                   </video>
                                 </div>
+                              </div>
+                            )}
+                            {block.type === 'quiz' && block.quiz && (
+                              <QuizPlayer quiz={block.quiz} />
+                            )}
+                            {block.type === 'quiz' && !block.quiz && (
+                              <div className="p-4 bg-red-50 border border-red-200 rounded">
+                                <p className="text-red-600">Quiz data is missing for this quiz block</p>
                               </div>
                             )}
                           </div>
