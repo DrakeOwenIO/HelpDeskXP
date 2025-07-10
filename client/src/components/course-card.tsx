@@ -1,6 +1,6 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,21 @@ interface CourseCardProps {
 export default function CourseCard({ course }: CourseCardProps) {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  // Check if user has purchased this course
+  const { data: hasPurchased } = useQuery({
+    queryKey: [`/api/user/purchases/${course.id}`],
+    enabled: !!user && !!course.id,
+    retry: false,
+  });
+
+  // Check if user is enrolled in this course
+  const { data: enrollment } = useQuery({
+    queryKey: [`/api/user/enrollments/${course.id}`],
+    enabled: !!user && !!course.id,
+    retry: false,
+  });
 
   const enrollMutation = useMutation({
     mutationFn: async () => {
@@ -49,8 +64,9 @@ export default function CourseCard({ course }: CourseCardProps) {
     },
   });
 
-  const canAccess = course.isFree || user?.isPremium;
-  const requiresPurchase = !course.isFree && !user?.isPremium;
+  const canAccess = course.isFree || user?.isPremium || hasPurchased || enrollment;
+  const isEnrolled = !!enrollment;
+  const hasAccess = canAccess && isEnrolled;
 
   const handleAction = () => {
     if (!isAuthenticated) {
@@ -58,23 +74,31 @@ export default function CourseCard({ course }: CourseCardProps) {
       return;
     }
 
-    if (course.isFree || user?.isPremium) {
-      enrollMutation.mutate();
-    } else {
-      // Navigate to course detail for purchase
-      window.location.href = `/courses/${course.id}`;
+    // If user has access and is enrolled, go to course viewer
+    if (hasAccess) {
+      setLocation(`/courses/${course.id}/viewer`);
+      return;
     }
+
+    // If user can access but isn't enrolled, enroll them
+    if (canAccess && !isEnrolled) {
+      enrollMutation.mutate();
+      return;
+    }
+
+    // Otherwise navigate to course detail for purchase
+    setLocation(`/courses/${course.id}`);
   };
 
   const getActionText = () => {
     if (!isAuthenticated) return "Sign In to Enroll";
-    if (course.isFree) return "Start Free Course";
-    if (user?.isPremium) return "Start Course (Membership)";
+    if (hasAccess) return "Continue Course";
+    if (canAccess && !isEnrolled) return course.isFree ? "Start Free Course" : "Start Course";
     return course.price ? `Buy Course - $${course.price}` : "Get Membership";
   };
 
   const getActionIcon = () => {
-    if (canAccess) return <Play className="w-4 h-4 mr-2" />;
+    if (hasAccess || canAccess) return <Play className="w-4 h-4 mr-2" />;
     return <Lock className="w-4 h-4 mr-2" />;
   };
 
