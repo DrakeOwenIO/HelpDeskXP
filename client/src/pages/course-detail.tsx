@@ -261,7 +261,7 @@ export default function CourseDetail() {
               </div>
             )}
             
-            {course.price && !course.isFree && (
+            {course.price && !course.isFree && !hasPurchased && !isEnrolled && (
               <div className="flex items-center justify-between mb-6 p-4 bg-neutral-100 rounded-lg">
                 <span className="text-3xl font-bold text-neutral-900">${course.price}</span>
                 <span className="text-sm text-neutral-600">One-time purchase</span>
