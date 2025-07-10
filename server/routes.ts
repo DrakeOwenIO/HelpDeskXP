@@ -804,6 +804,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reorder lessons within a module
+  app.put('/api/admin/courses/:courseId/modules/:moduleId/lessons/reorder', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      const { lessonOrders } = req.body; // Array of { id: number, orderIndex: number }
+      
+      if (!Array.isArray(lessonOrders)) {
+        return res.status(400).json({ message: "lessonOrders must be an array" });
+      }
+
+      await storage.reorderLessons(moduleId, lessonOrders);
+      res.json({ message: "Lessons reordered successfully" });
+    } catch (error) {
+      console.error("Error reordering lessons:", error);
+      res.status(500).json({ message: "Failed to reorder lessons" });
+    }
+  });
+
   // Quiz and Test Management API routes
   
   // Create quiz for lesson or test for module

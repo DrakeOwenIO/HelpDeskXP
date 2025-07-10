@@ -127,6 +127,7 @@ export interface IStorage {
   createCourseLesson(lesson: InsertCourseLesson): Promise<CourseLesson>;
   updateCourseLesson(id: number, updates: Partial<InsertCourseLesson>): Promise<CourseLesson>;
   deleteCourseLesson(id: number): Promise<void>;
+  reorderLessons(moduleId: number, lessonOrders: { id: number; orderIndex: number }[]): Promise<void>;
   
   // Course viewer operations
   getCourseWithModulesAndLessons(courseId: number): Promise<Course & { modules: (CourseModule & { lessons: CourseLesson[] })[] } | undefined>;
@@ -827,6 +828,19 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCourseLesson(id: number): Promise<void> {
     await db.delete(courseLessons).where(eq(courseLessons.id, id));
+  }
+
+  async reorderLessons(moduleId: number, lessonOrders: { id: number; orderIndex: number }[]): Promise<void> {
+    // Update each lesson's order index
+    for (const { id, orderIndex } of lessonOrders) {
+      await db
+        .update(courseLessons)
+        .set({ 
+          orderIndex,
+          updatedAt: new Date() 
+        })
+        .where(and(eq(courseLessons.id, id), eq(courseLessons.moduleId, moduleId)));
+    }
   }
 
   // Course viewer operations (only published content)

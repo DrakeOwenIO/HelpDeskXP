@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Edit, Trash2, Save, GripVertical, Play, FileText, Video, CheckCircle, HelpCircle, Target } from "lucide-react";
 import { Link } from "wouter";
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 interface CourseModule {
   id: number;
@@ -74,6 +76,78 @@ interface CourseStructure {
     lessons: Lesson[];
   })[];
 }
+
+// Draggable lesson component
+interface DraggableLessonProps {
+  lesson: Lesson;
+  index: number;
+  moduleId: number;
+  courseId: string;
+  moveLesson: (moduleId: number, dragIndex: number, hoverIndex: number) => void;
+  getContentTypeIcon: (contentType: string) => JSX.Element;
+  onDelete: (lessonId: number) => void;
+  onCreateQuiz: (lesson: Lesson) => void;
+}
+
+const DraggableLesson = ({ lesson, index, moduleId, courseId, moveLesson, getContentTypeIcon, onDelete, onCreateQuiz }: DraggableLessonProps) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'lesson',
+    item: () => ({ id: lesson.id, index, moduleId }),
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'lesson',
+    hover: (item: { id: number; index: number; moduleId: number }) => {
+      if (!item) return;
+      if (item.moduleId !== moduleId) return; // Only allow reordering within the same module
+      
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      if (dragIndex === hoverIndex) return;
+
+      moveLesson(moduleId, dragIndex, hoverIndex);
+      item.index = hoverIndex;
+    },
+  });
+
+  return (
+    <div
+      ref={(node) => drag(drop(node))}
+      className={`flex items-center justify-between p-3 bg-neutral-50 rounded-md cursor-move transition-opacity ${
+        isDragging ? 'opacity-50' : 'opacity-100'
+      }`}
+    >
+      <div className="flex items-center space-x-3">
+        <GripVertical className="w-4 h-4 text-neutral-400" />
+        {getContentTypeIcon(lesson.contentType)}
+        <div>
+          <p className="font-medium">{index + 1}. {lesson.title}</p>
+          <p className="text-sm text-neutral-600">{lesson.description}</p>
+        </div>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Badge variant={lesson.isPublished ? 'default' : 'secondary'} className="text-xs">
+          {lesson.isPublished ? 'Published' : 'Draft'}
+        </Badge>
+        <Link href={`/admin/course-builder/${courseId}/lesson/${lesson.id}`}>
+          <Button variant="ghost" size="sm">
+            <Edit className="w-3 h-3" />
+          </Button>
+        </Link>
+        <Button variant="ghost" size="sm" onClick={() => onDelete(lesson.id)}>
+          <Trash2 className="w-3 h-3" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onCreateQuiz(lesson)}>
+          <HelpCircle className="w-3 h-3" />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 export default function CourseBuilder() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -197,6 +271,27 @@ export default function CourseBuilder() {
     },
   });
 
+  // Lesson reordering mutation
+  const reorderLessonsMutation = useMutation({
+    mutationFn: async ({ moduleId, lessonOrders }: { moduleId: number; lessonOrders: { id: number; orderIndex: number }[] }) => {
+      return await apiRequest('PUT', `/api/admin/courses/${courseId}/modules/${moduleId}/lessons/reorder`, { lessonOrders });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
+      toast({
+        title: "Lessons Reordered",
+        description: "Lesson order has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to reorder lessons.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Quiz/Test mutations
   const createQuizMutation = useMutation({
     mutationFn: async (quizData: any) => {
@@ -289,6 +384,24 @@ export default function CourseBuilder() {
     }
   };
 
+  const moveLesson = useCallback((moduleId: number, dragIndex: number, hoverIndex: number) => {
+    const module = courseStructure?.modules.find(m => m.id === moduleId);
+    if (!module) return;
+
+    const dragLesson = module.lessons[dragIndex];
+    const newLessons = [...module.lessons];
+    newLessons.splice(dragIndex, 1);
+    newLessons.splice(hoverIndex, 0, dragLesson);
+
+    // Update order indices and send to backend
+    const lessonOrders = newLessons.map((lesson, index) => ({
+      id: lesson.id,
+      orderIndex: index
+    }));
+
+    reorderLessonsMutation.mutate({ moduleId, lessonOrders });
+  }, [courseStructure, reorderLessonsMutation]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -334,8 +447,9 @@ export default function CourseBuilder() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="container mx-auto px-4 py-8">
+    <DndProvider backend={HTML5Backend}>
+      <div className="min-h-screen bg-neutral-50">
+        <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Link href="/admin/courses">
@@ -398,52 +512,27 @@ export default function CourseBuilder() {
                     {/* Lessons */}
                     <div className="space-y-2">
                       {module.lessons.map((lesson, lessonIndex) => (
-                        <div key={lesson.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-md">
-                          <div className="flex items-center space-x-3">
-                            {getContentTypeIcon(lesson.contentType)}
-                            <div>
-                              <p className="font-medium">{lessonIndex + 1}. {lesson.title}</p>
-                              <p className="text-sm text-neutral-600">{lesson.description}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={lesson.isPublished ? 'default' : 'secondary'} className="text-xs">
-                              {lesson.isPublished ? 'Published' : 'Draft'}
-                            </Badge>
-                            <Link href={`/admin/course-builder/${courseId}/lesson/${lesson.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteLessonMutation.mutate(lesson.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setQuizForm({
-                                  title: `${lesson.title} Quiz`,
-                                  description: `Quiz for ${lesson.title}`,
-                                  type: "lesson_quiz",
-                                  lessonId: lesson.id,
-                                  moduleId: null,
-                                  passingScore: 80,
-                                });
-                                setCreateQuizOpen(true);
-                              }}
-                            >
-                              <HelpCircle className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
+                        <DraggableLesson
+                          key={lesson.id}
+                          lesson={lesson}
+                          index={lessonIndex}
+                          moduleId={module.id}
+                          courseId={courseId!}
+                          moveLesson={moveLesson}
+                          getContentTypeIcon={getContentTypeIcon}
+                          onDelete={(lessonId) => deleteLessonMutation.mutate(lessonId)}
+                          onCreateQuiz={(lesson) => {
+                            setQuizForm({
+                              title: `${lesson.title} Quiz`,
+                              description: `Quiz for ${lesson.title}`,
+                              type: "lesson_quiz",
+                              lessonId: lesson.id,
+                              moduleId: null,
+                              passingScore: 80,
+                            });
+                            setCreateQuizOpen(true);
+                          }}
+                        />
                       ))}
                       
                       {/* Add Lesson and Module Test Buttons */}
@@ -738,7 +827,8 @@ export default function CourseBuilder() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
-    </div>
+    </DndProvider>
   );
 }
