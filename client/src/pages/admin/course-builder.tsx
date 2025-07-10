@@ -370,13 +370,14 @@ export default function CourseBuilder() {
                             <Badge variant={lesson.isPublished ? 'default' : 'secondary'} className="text-xs">
                               {lesson.isPublished ? 'Published' : 'Draft'}
                             </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingLesson(lesson.id)}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
+                            <Link href={`/admin/course-builder/${courseId}/lesson/${lesson.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                            </Link>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -571,12 +572,15 @@ export default function CourseBuilder() {
         
         {/* Quiz Creation Dialog */}
         <Dialog open={createQuizOpen} onOpenChange={setCreateQuizOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl" aria-describedby="quiz-dialog-description">
             <DialogHeader>
               <DialogTitle>
                 Create {quizForm.type === 'lesson_quiz' ? 'Quiz' : 'Test'}
               </DialogTitle>
             </DialogHeader>
+            <div id="quiz-dialog-description" className="sr-only">
+              Create a new {quizForm.type === 'lesson_quiz' ? 'quiz' : 'test'} with custom title, description and passing score
+            </div>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="quiz-title">Title</Label>

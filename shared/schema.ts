@@ -167,6 +167,7 @@ export const courseLessons = pgTable("course_lessons", {
   isPublished: boolean("is_published").default(false),
   videoUrl: varchar("video_url", { length: 500 }),
   duration: integer("duration"), // in minutes
+  contentBlocks: jsonb("content_blocks"), // For structured lesson content
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

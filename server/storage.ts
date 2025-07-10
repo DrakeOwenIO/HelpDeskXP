@@ -119,6 +119,7 @@ export interface IStorage {
   deleteCourseModule(id: number): Promise<void>;
   
   getModuleLessons(moduleId: number): Promise<CourseLesson[]>;
+  getCourseLesson(lessonId: number): Promise<CourseLesson | undefined>;
   createCourseLesson(lesson: InsertCourseLesson): Promise<CourseLesson>;
   updateCourseLesson(id: number, updates: Partial<InsertCourseLesson>): Promise<CourseLesson>;
   deleteCourseLesson(id: number): Promise<void>;
@@ -761,6 +762,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(courseLessons)
       .where(eq(courseLessons.moduleId, moduleId))
       .orderBy(courseLessons.orderIndex);
+  }
+
+  async getCourseLesson(lessonId: number): Promise<CourseLesson | undefined> {
+    const [lesson] = await db.select().from(courseLessons).where(eq(courseLessons.id, lessonId));
+    return lesson;
   }
 
   async createCourseLesson(lesson: InsertCourseLesson): Promise<CourseLesson> {

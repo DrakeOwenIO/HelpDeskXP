@@ -610,6 +610,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/courses/:courseId/lessons/:lessonId', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const lessonId = parseInt(req.params.lessonId);
+      const lesson = await storage.getCourseLesson(lessonId);
+      
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+      
+      res.json(lesson);
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      res.status(500).json({ message: "Failed to fetch lesson" });
+    }
+  });
+
   app.put('/api/admin/courses/:courseId/lessons/:lessonId', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const lessonId = parseInt(req.params.lessonId);
