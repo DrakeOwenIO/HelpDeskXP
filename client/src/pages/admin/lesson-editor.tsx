@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   ArrowLeft, 
   Plus, 
@@ -23,13 +24,15 @@ import {
   FileText, 
   GripVertical,
   Eye,
-  Settings
+  Settings,
+  HelpCircle,
+  Check
 } from "lucide-react";
 import { Link } from "wouter";
 
 interface LessonContent {
   id: string;
-  type: 'text' | 'video' | 'image';
+  type: 'text' | 'video' | 'image' | 'quiz';
   content: string;
   orderIndex: number;
   metadata?: {
@@ -38,6 +41,18 @@ interface LessonContent {
     duration?: number;
     alt?: string;
   };
+  quiz?: {
+    title: string;
+    questions: QuizQuestion[];
+    passingScore: number;
+  };
+}
+
+interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
 }
 
 interface Lesson {
@@ -68,6 +83,13 @@ export default function LessonEditor() {
   const [newContentType, setNewContentType] = useState<'text' | 'video' | 'image'>('text');
   const [showAddContent, setShowAddContent] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState<LessonContent | null>(null);
+  const [quizForm, setQuizForm] = useState({
+    title: '',
+    questions: [] as QuizQuestion[],
+    passingScore: 80
+  });
   const [lessonSettings, setLessonSettings] = useState({
     title: "",
     description: "",
@@ -238,6 +260,79 @@ export default function LessonEditor() {
     updateLessonMutation.mutate(lessonSettings);
   };
 
+  // Quiz functions
+  const addQuiz = () => {
+    const newQuiz: LessonContent = {
+      id: Date.now().toString(),
+      type: 'quiz',
+      content: quizForm.title,
+      orderIndex: (lesson?.contentBlocks?.length || 0),
+      quiz: {
+        title: quizForm.title,
+        questions: quizForm.questions,
+        passingScore: quizForm.passingScore
+      }
+    };
+    
+    const updatedBlocks = [...(lesson?.contentBlocks || []), newQuiz];
+    updateLessonMutation.mutate({ 
+      contentBlocks: updatedBlocks 
+    });
+    setShowQuizBuilder(false);
+  };
+
+  const updateQuiz = (quizId: string) => {
+    if (!lesson?.contentBlocks) return;
+    
+    const updatedBlocks = lesson.contentBlocks.map(block =>
+      block.id === quizId ? {
+        ...block,
+        content: quizForm.title,
+        quiz: {
+          title: quizForm.title,
+          questions: quizForm.questions,
+          passingScore: quizForm.passingScore
+        }
+      } : block
+    );
+    
+    updateLessonMutation.mutate({ 
+      contentBlocks: updatedBlocks 
+    });
+    setShowQuizBuilder(false);
+    setEditingQuiz(null);
+  };
+
+  const addQuestion = () => {
+    const newQuestion: QuizQuestion = {
+      id: Date.now().toString(),
+      question: '',
+      options: ['', '', '', ''],
+      correctAnswer: 0
+    };
+    
+    setQuizForm(prev => ({
+      ...prev,
+      questions: [...prev.questions, newQuestion]
+    }));
+  };
+
+  const updateQuestion = (questionId: string, updates: Partial<QuizQuestion>) => {
+    setQuizForm(prev => ({
+      ...prev,
+      questions: prev.questions.map(q =>
+        q.id === questionId ? { ...q, ...updates } : q
+      )
+    }));
+  };
+
+  const deleteQuestion = (questionId: string) => {
+    setQuizForm(prev => ({
+      ...prev,
+      questions: prev.questions.filter(q => q.id !== questionId)
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -332,6 +427,18 @@ export default function LessonEditor() {
                       <Video className="w-4 h-4 mr-2" />
                       Add Video
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setQuizForm({ title: '', questions: [], passingScore: 80 });
+                        setEditingQuiz(null);
+                        setShowQuizBuilder(true);
+                      }}
+                    >
+                      <HelpCircle className="w-4 h-4 mr-2" />
+                      Add Quiz
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -387,6 +494,40 @@ export default function LessonEditor() {
                                     </p>
                                   </div>
                                 )}
+                                {block.type === 'quiz' && (
+                                  <div className="space-y-3 border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                                    <div className="flex items-center space-x-2">
+                                      <HelpCircle className="w-5 h-5 text-blue-600" />
+                                      <h3 className="font-medium text-blue-900">{block.quiz?.title || 'Quiz'}</h3>
+                                    </div>
+                                    <div className="text-sm text-blue-700">
+                                      <p>{block.quiz?.questions.length || 0} questions</p>
+                                      <p>Passing score: {block.quiz?.passingScore || 80}%</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {block.quiz?.questions.slice(0, 2).map((q, idx) => (
+                                        <div key={idx} className="text-sm bg-white p-2 rounded border">
+                                          <p className="font-medium">{idx + 1}. {q.question || 'Question text...'}</p>
+                                          <div className="mt-1 space-y-1">
+                                            {q.options.map((option, optIdx) => (
+                                              <div key={optIdx} className="flex items-center space-x-2">
+                                                <div className={`w-2 h-2 rounded-full ${optIdx === q.correctAnswer ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                <span className={optIdx === q.correctAnswer ? 'text-green-700 font-medium' : 'text-gray-600'}>
+                                                  {option || `Option ${optIdx + 1}...`}
+                                                </span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {(block.quiz?.questions.length || 0) > 2 && (
+                                        <p className="text-xs text-blue-600">
+                                          +{(block.quiz?.questions.length || 0) - 2} more questions...
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -395,6 +536,23 @@ export default function LessonEditor() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => setEditingContent(block)}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              )}
+                              {block.type === 'quiz' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setQuizForm({
+                                      title: block.quiz?.title || '',
+                                      questions: block.quiz?.questions || [],
+                                      passingScore: block.quiz?.passingScore || 80
+                                    });
+                                    setEditingQuiz(block);
+                                    setShowQuizBuilder(true);
+                                  }}
                                 >
                                   <Edit className="w-3 h-3" />
                                 </Button>
@@ -470,6 +628,12 @@ export default function LessonEditor() {
                     <span className="text-sm text-neutral-600">Videos</span>
                     <span className="font-medium">
                       {lesson.contentBlocks?.filter(b => b.type === 'video').length || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-neutral-600">Quizzes</span>
+                    <span className="font-medium">
+                      {lesson.contentBlocks?.filter(b => b.type === 'quiz').length || 0}
                     </span>
                   </div>
                 </div>
@@ -565,6 +729,146 @@ export default function LessonEditor() {
                 </Button>
                 <Button onClick={updateLessonSettings} disabled={updateLessonMutation.isPending}>
                   {updateLessonMutation.isPending ? "Saving..." : "Save Settings"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Quiz Builder Dialog */}
+        <Dialog open={showQuizBuilder} onOpenChange={setShowQuizBuilder}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="quiz-builder-description">
+            <DialogHeader>
+              <DialogTitle>{editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}</DialogTitle>
+            </DialogHeader>
+            <div id="quiz-builder-description" className="sr-only">
+              Create or edit a quiz with multiple choice questions and correct answers
+            </div>
+            
+            <div className="space-y-6">
+              {/* Quiz Settings */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="quiz-title">Quiz Title</Label>
+                  <Input
+                    id="quiz-title"
+                    value={quizForm.title}
+                    onChange={(e) => setQuizForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter quiz title..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="passing-score">Passing Score (%)</Label>
+                  <Input
+                    id="passing-score"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={quizForm.passingScore}
+                    onChange={(e) => setQuizForm(prev => ({ ...prev, passingScore: parseInt(e.target.value) || 80 }))}
+                  />
+                </div>
+              </div>
+
+              {/* Questions */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Questions</h3>
+                  <Button onClick={addQuestion} size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Question
+                  </Button>
+                </div>
+
+                {quizForm.questions.length === 0 ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    <HelpCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">No questions yet</p>
+                    <p className="mb-4">Start building your quiz by adding questions</p>
+                    <Button onClick={addQuestion}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Question
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {quizForm.questions.map((question, index) => (
+                      <Card key={question.id} className="p-4">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <Label htmlFor={`question-${question.id}`} className="text-base font-medium">
+                              Question {index + 1}
+                            </Label>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteQuestion(question.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          
+                          <div>
+                            <Input
+                              id={`question-${question.id}`}
+                              value={question.question}
+                              onChange={(e) => updateQuestion(question.id, { question: e.target.value })}
+                              placeholder="Enter your question..."
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Answer Options</Label>
+                            {question.options.map((option, optIndex) => (
+                              <div key={optIndex} className="flex items-center space-x-2">
+                                <Checkbox
+                                  checked={question.correctAnswer === optIndex}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      updateQuestion(question.id, { correctAnswer: optIndex });
+                                    }
+                                  }}
+                                />
+                                <Input
+                                  value={option}
+                                  onChange={(e) => {
+                                    const newOptions = [...question.options];
+                                    newOptions[optIndex] = e.target.value;
+                                    updateQuestion(question.id, { options: newOptions });
+                                  }}
+                                  placeholder={`Option ${optIndex + 1}...`}
+                                  className="flex-1"
+                                />
+                                <span className="text-xs text-neutral-500 min-w-[60px]">
+                                  {question.correctAnswer === optIndex ? (
+                                    <span className="text-green-600 font-medium flex items-center">
+                                      <Check className="w-3 h-3 mr-1" />
+                                      Correct
+                                    </span>
+                                  ) : (
+                                    'Option'
+                                  )}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowQuizBuilder(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => editingQuiz ? updateQuiz(editingQuiz.id) : addQuiz()}
+                  disabled={!quizForm.title.trim() || quizForm.questions.length === 0}
+                >
+                  {editingQuiz ? 'Update Quiz' : 'Add Quiz'}
                 </Button>
               </div>
             </div>
