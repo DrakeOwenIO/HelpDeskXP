@@ -28,9 +28,12 @@ export default function CoursePreview() {
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
 
   // Fetch course preview content (includes drafts)
-  const { data: course, isLoading: courseLoading } = useQuery<CourseWithContent>({
+  const { data: course, isLoading: courseLoading, refetch: refetchCourse } = useQuery<CourseWithContent>({
     queryKey: [`/api/admin/courses/${courseId}/preview`],
     enabled: !!courseId && !!user,
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache results
+    refetchOnWindowFocus: true, // Refetch when coming back to preview
   });
 
   // Auto-select first lesson when course loads
@@ -128,6 +131,14 @@ export default function CoursePreview() {
             <div className="flex items-center gap-2 mb-2">
               <Eye className="h-4 w-4 text-blue-600" />
               <Badge variant="secondary">Preview Mode</Badge>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => refetchCourse()}
+                className="ml-2"
+              >
+                Refresh
+              </Button>
             </div>
             
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">

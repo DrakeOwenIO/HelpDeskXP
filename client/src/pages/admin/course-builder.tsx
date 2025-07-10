@@ -147,6 +147,8 @@ export default function CourseBuilder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/structure`] });
+      // Invalidate course preview to refresh status badges
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/courses/${courseId}/preview`] });
       setEditingModule(null);
       toast({
         title: "Module Updated",
