@@ -229,6 +229,7 @@ export const quizAttempts = pgTable("quiz_attempts", {
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type UserWithoutPassword = Omit<User, 'password'>;
 
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = typeof courses.$inferInsert;

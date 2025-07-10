@@ -8,6 +8,7 @@ import {
   forumVotes,
   type User,
   type UpsertUser,
+  type UserWithoutPassword,
   type Course,
   type InsertCourse,
   type Enrollment,
@@ -45,7 +46,7 @@ import { eq, desc, and, sql } from "drizzle-orm";
 // Interface for storage operations
 export interface IStorage {
   // User operations - updated for local auth
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: number): Promise<UserWithoutPassword | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: UpsertUser): Promise<User>;
@@ -157,9 +158,23 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations - updated for local auth
 
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  async getUser(id: number): Promise<UserWithoutPassword | undefined> {
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      isEmailVerified: users.isEmailVerified,
+      canCreateBlogPosts: users.canCreateBlogPosts,
+      canCreateCourses: users.canCreateCourses,
+      canModerateForum: users.canModerateForum,
+      canManageAccounts: users.canManageAccounts,
+      isSuperAdmin: users.isSuperAdmin,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
