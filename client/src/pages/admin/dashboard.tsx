@@ -17,7 +17,7 @@ export default function AdminDashboard() {
 
   // Redirect if not admin
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !user?.isAdmin)) {
+    if (!isLoading && (!isAuthenticated || (!user?.isSuperAdmin && !user?.canCreateCourses && !user?.canCreateBlogPosts && !user?.canModerateForum))) {
       toast({
         title: "Unauthorized",
         description: "Admin access required. Redirecting...",
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const { data: courses, isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
     retry: false,
-    enabled: isAuthenticated && user?.isAdmin,
+    enabled: isAuthenticated && (user?.isSuperAdmin || user?.canCreateCourses || user?.canCreateBlogPosts || user?.canModerateForum),
   });
 
   if (isLoading || coursesLoading) {
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!user?.isSuperAdmin && !user?.canCreateCourses && !user?.canCreateBlogPosts && !user?.canModerateForum) {
     return null;
   }
 
