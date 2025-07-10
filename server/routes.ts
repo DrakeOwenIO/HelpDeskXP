@@ -8,14 +8,21 @@ import fs from "fs";
 import express from "express";
 
 // Configure multer for file uploads
-const uploadDir = path.join(process.cwd(), 'uploads', 'profile-images');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+const profileImageDir = path.join(process.cwd(), 'uploads', 'profile-images');
+const courseThumbnailDir = path.join(process.cwd(), 'uploads', 'course-thumbnails');
+const courseVideoDir = path.join(process.cwd(), 'uploads', 'course-videos');
 
-const upload = multer({
+// Create directories if they don't exist
+[profileImageDir, courseThumbnailDir, courseVideoDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Profile image upload configuration
+const profileImageUpload = multer({
   storage: multer.diskStorage({
-    destination: uploadDir,
+    destination: profileImageDir,
     filename: (req, file, cb) => {
       const userId = (req as any).user?.claims?.sub;
       const ext = path.extname(file.originalname);
@@ -30,6 +37,50 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+// Course thumbnail upload configuration
+const courseThumbnailUpload = multer({
+  storage: multer.diskStorage({
+    destination: courseThumbnailDir,
+    filename: (req, file, cb) => {
+      const timestamp = Date.now();
+      const ext = path.extname(file.originalname);
+      cb(null, `thumbnail-${timestamp}${ext}`);
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit for thumbnails
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+// Course video upload configuration
+const courseVideoUpload = multer({
+  storage: multer.diskStorage({
+    destination: courseVideoDir,
+    filename: (req, file, cb) => {
+      const timestamp = Date.now();
+      const ext = path.extname(file.originalname);
+      cb(null, `video-${timestamp}${ext}`);
+    }
+  }),
+  limits: {
+    fileSize: 500 * 1024 * 1024, // 500MB limit for videos
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only video files are allowed'));
     }
   }
 });
@@ -79,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/user/profile-image', isAuthenticated, upload.single('profileImage'), async (req: any, res) => {
+  app.post('/api/user/profile-image', isAuthenticated, profileImageUpload.single('profileImage'), async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -101,7 +152,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve uploaded profile images
+  // Course file upload endpoints
+  app.post('/api/admin/course-thumbnail', isAuthenticated, courseThumbnailUpload.single('thumbnail'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.canCreateCourses && !user?.isSuperAdmin) {
+        return res.status(403).json({ message: "Course admin access required" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No thumbnail file provided" });
+      }
+
+      const thumbnailUrl = `/uploads/course-thumbnails/${req.file.filename}`;
+      res.json({ thumbnailUrl, message: "Thumbnail uploaded successfully" });
+    } catch (error) {
+      console.error("Error uploading course thumbnail:", error);
+      res.status(500).json({ message: "Failed to upload thumbnail" });
+    }
+  });
+
+  app.post('/api/admin/course-video', isAuthenticated, courseVideoUpload.single('video'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.canCreateCourses && !user?.isSuperAdmin) {
+        return res.status(403).json({ message: "Course admin access required" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No video file provided" });
+      }
+
+      const videoUrl = `/uploads/course-videos/${req.file.filename}`;
+      res.json({ videoUrl, message: "Video uploaded successfully" });
+    } catch (error) {
+      console.error("Error uploading course video:", error);
+      res.status(500).json({ message: "Failed to upload video" });
+    }
+  });
+
+  // Serve uploaded files
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Course routes

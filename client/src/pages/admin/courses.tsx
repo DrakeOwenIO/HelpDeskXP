@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Settings } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, ArrowLeft, Settings, Upload, Image, Video } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { insertCourseSchema, type Course, type InsertCourse } from "@shared/schema";
@@ -34,6 +34,8 @@ export default function AdminCourses() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   // Redirect if not admin
   useEffect(() => {
@@ -224,6 +226,94 @@ export default function AdminCourses() {
     setIsCreateDialogOpen(true);
   };
 
+  const handleThumbnailUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setThumbnailUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('thumbnail', file);
+
+      const response = await fetch('/api/admin/course-thumbnail', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      form.setValue('thumbnailUrl', result.thumbnailUrl);
+      
+      toast({
+        title: "Success",
+        description: "Thumbnail uploaded successfully!",
+      });
+    } catch (error) {
+      console.error('Thumbnail upload error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload thumbnail. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setThumbnailUploading(false);
+      // Reset the input
+      event.target.value = '';
+    }
+  };
+
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (500MB limit)
+    if (file.size > 500 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Video file must be less than 500MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setVideoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const response = await fetch('/api/admin/course-video', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      form.setValue('videoUrl', result.videoUrl);
+      
+      toast({
+        title: "Success",
+        description: "Video uploaded successfully!",
+      });
+    } catch (error) {
+      console.error('Video upload error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setVideoUploading(false);
+      // Reset the input
+      event.target.value = '';
+    }
+  };
+
   if (isLoading || coursesLoading) {
     return (
       <div className="min-h-screen bg-neutral-50">
@@ -391,34 +481,151 @@ export default function AdminCourses() {
                     />
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="videoUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Video URL</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {/* File Upload Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Media Files</h3>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Thumbnail Upload */}
+                      <div className="space-y-3">
+                        <FormField
+                          control={form.control}
+                          name="thumbnailUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Course Thumbnail</FormLabel>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="Thumbnail URL or upload below" 
+                                      {...field} 
+                                      readOnly={thumbnailUploading}
+                                    />
+                                  </FormControl>
+                                </div>
+                                
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleThumbnailUpload}
+                                    disabled={thumbnailUploading}
+                                    className="hidden"
+                                    id="thumbnail-upload"
+                                  />
+                                  <label htmlFor="thumbnail-upload">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      disabled={thumbnailUploading}
+                                      className="w-full cursor-pointer"
+                                      asChild
+                                    >
+                                      <span>
+                                        {thumbnailUploading ? (
+                                          <>
+                                            <Upload className="w-4 h-4 mr-2 animate-spin" />
+                                            Uploading...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Image className="w-4 h-4 mr-2" />
+                                            Upload Thumbnail
+                                          </>
+                                        )}
+                                      </span>
+                                    </Button>
+                                  </label>
+                                </div>
+                                
+                                {field.value && (
+                                  <div className="mt-2">
+                                    <img
+                                      src={field.value}
+                                      alt="Thumbnail preview"
+                                      className="w-full h-32 object-cover rounded-md border"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <FormField
-                      control={form.control}
-                      name="thumbnailUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Thumbnail URL</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      {/* Video Upload */}
+                      <div className="space-y-3">
+                        <FormField
+                          control={form.control}
+                          name="videoUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Course Video</FormLabel>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="Video URL or upload below" 
+                                      {...field} 
+                                      readOnly={videoUploading}
+                                    />
+                                  </FormControl>
+                                </div>
+                                
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    accept="video/*"
+                                    onChange={handleVideoUpload}
+                                    disabled={videoUploading}
+                                    className="hidden"
+                                    id="video-upload"
+                                  />
+                                  <label htmlFor="video-upload">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      disabled={videoUploading}
+                                      className="w-full cursor-pointer"
+                                      asChild
+                                    >
+                                      <span>
+                                        {videoUploading ? (
+                                          <>
+                                            <Upload className="w-4 h-4 mr-2 animate-spin" />
+                                            Uploading...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Video className="w-4 h-4 mr-2" />
+                                            Upload Video
+                                          </>
+                                        )}
+                                      </span>
+                                    </Button>
+                                  </label>
+                                </div>
+                                
+                                {field.value && field.value.includes('/uploads/course-videos/') && (
+                                  <div className="mt-2">
+                                    <video
+                                      src={field.value}
+                                      controls
+                                      className="w-full h-32 rounded-md border"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <FormField
