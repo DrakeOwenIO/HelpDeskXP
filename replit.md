@@ -170,3 +170,4 @@ The application follows a monorepo structure with clear separation between clien
 - **Course Preview System**: Implemented comprehensive course preview functionality for admins to view draft content including unpublished modules and lessons - provides dedicated API endpoint and preview page separate from regular course viewer
 - **Content Visibility Fix**: Fixed course viewer to only show published modules and lessons to regular users while admin preview shows all content including drafts
 - **Live Status Updates**: Fixed lesson status updates to properly refresh in course builder menu when changed in lesson editor through proper cache invalidation
+- **Drag-and-Drop Lesson Reordering**: Implemented complete lesson reordering system with React DnD library - course admins can now drag lessons up and down within modules, with visual feedback and automatic database updates through dedicated API endpoint
