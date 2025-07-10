@@ -425,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      console.log('Admin check for user:', userId, 'isAdmin:', user?.isAdmin, 'canCreateCourses:', user?.canCreateCourses, 'isSuperAdmin:', user?.isSuperAdmin);
+      // console.log('Admin check for user:', userId, 'isAdmin:', user?.isAdmin, 'canCreateCourses:', user?.canCreateCourses, 'isSuperAdmin:', user?.isSuperAdmin);
       
       // Check if user is admin OR has course creation permissions OR is super admin
       if (!user?.isAdmin && !user?.canCreateCourses && !user?.isSuperAdmin) {
@@ -503,8 +503,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/admin/courses/:id', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      console.log("Course update request body:", JSON.stringify(req.body, null, 2));
-      
       // Handle data transformations
       const courseData = { ...req.body };
       if (typeof courseData.learningObjectives === 'string') {
@@ -516,13 +514,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const validatedData = insertCourseSchema.partial().parse(courseData);
-      console.log("Validated course data:", JSON.stringify(validatedData, null, 2));
       
       const course = await storage.updateCourse(id, validatedData);
       res.json(course);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid course data", errors: error.errors });
       }
       console.error("Error updating course:", error);

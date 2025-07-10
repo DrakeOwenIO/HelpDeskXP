@@ -165,4 +165,4 @@ The application follows a monorepo structure with clear separation between clien
 - **Price Display**: Hidden price section for users who have already purchased the course to improve user experience
 - **UI Color Updates**: Changed all hover colors and accent colors from red to blue for consistent branding throughout the application
 - **Course Access Count Fix**: Fixed account management to only count enrollments in course access, not purchases - purchases are still displayed separately under purchases section
-- **Course File Upload System**: Added custom thumbnail and video upload functionality to course management - supports direct file uploads with preview, 10MB limit for thumbnails, 500MB limit for videos, stored in organized upload directories
+- **Course File Upload System**: Completed custom thumbnail and video upload functionality with file size validation, preview support, and organized storage - fixes course update validation issues and provides seamless file management for course admins
