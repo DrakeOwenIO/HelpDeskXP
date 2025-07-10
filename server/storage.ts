@@ -8,6 +8,7 @@ import {
   forumVotes,
   type User,
   type UpsertUser,
+  type InsertUser,
   type UserWithoutPassword,
   type Course,
   type InsertCourse,
@@ -49,7 +50,7 @@ export interface IStorage {
   getUser(id: number): Promise<UserWithoutPassword | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: UpsertUser): Promise<User>;
+  createUser(user: InsertUser): Promise<User>;
   updateUserProfile(userId: number, profile: { firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User>;
   
   // Account management operations
@@ -188,7 +189,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(userData: UpsertUser): Promise<User> {
+  async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)

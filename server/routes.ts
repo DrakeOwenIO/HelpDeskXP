@@ -84,7 +84,7 @@ const courseVideoUpload = multer({
     }
   }
 });
-import { insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema, insertForumPostSchema, insertForumReplySchema, insertBlogPostSchema, insertBlogCommentSchema, insertCourseModuleSchema, insertCourseLessonSchema } from "@shared/schema";
+import { insertUserSchema, insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema, insertForumPostSchema, insertForumReplySchema, insertBlogPostSchema, insertBlogCommentSchema, insertCourseModuleSchema, insertCourseLessonSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -94,43 +94,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { username, email, password, firstName, lastName } = req.body;
-      
-      // Validate input
-      if (!username || !password || !firstName || !lastName) {
-        return res.status(400).json({ message: "Username, password, first name, and last name are required" });
-      }
-
-      // Make email optional for development, generate if not provided
-      const userEmail = email || `${username}@example.com`;
+      // Validate request body using insertUserSchema
+      const userData = insertUserSchema.parse({
+        ...req.body,
+        email: req.body.email || `${req.body.username}@example.com`, // Generate email if not provided
+      });
 
       // Check if user already exists
-      const existingUserByUsername = await storage.getUserByUsername(username);
+      const existingUserByUsername = await storage.getUserByUsername(userData.username);
       if (existingUserByUsername) {
         return res.status(400).json({ message: "Username already taken" });
       }
 
-      const existingUserByEmail = await storage.getUserByEmail(userEmail);
+      const existingUserByEmail = await storage.getUserByEmail(userData.email);
       if (existingUserByEmail) {
         return res.status(400).json({ message: "Email already registered" });
       }
 
       // Hash password and create user
       const { hashPassword } = await import('./auth');
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await hashPassword(userData.password);
       
       const newUser = await storage.createUser({
-        username,
-        email: userEmail,
+        ...userData,
         password: hashedPassword,
-        firstName,
-        lastName,
       });
 
       // Don't return password in response
       const { password: _, ...userWithoutPassword } = newUser;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
       console.error("Registration error:", error);
       res.status(500).json({ message: "Failed to create account" });
     }
