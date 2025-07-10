@@ -94,7 +94,7 @@ export default function CourseCard({ course }: CourseCardProps) {
     if (!isAuthenticated) return "Sign In to Enroll";
     if (hasAccess) return "Continue Course";
     if (canAccess && !isEnrolled) return course.isFree ? "Start Free Course" : "Start Course";
-    return course.price ? `Buy Course - $${course.price}` : "Get Membership";
+    return `Buy Course - $${course.price}`;
   };
 
   const getActionIcon = () => {
@@ -115,7 +115,7 @@ export default function CourseCard({ course }: CourseCardProps) {
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-3">
           <Badge className={course.isFree ? "bg-secondary" : "bg-primary"}>
-            {course.isFree ? "FREE" : course.price ? `$${course.price}` : "MEMBERSHIP"}
+            {course.isFree ? "FREE" : `$${course.price}`}
           </Badge>
           <div className="flex items-center text-sm text-neutral-500">
             <Clock className="w-4 h-4 mr-1" />
