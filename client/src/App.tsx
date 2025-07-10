@@ -22,6 +22,8 @@ import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
 import AccountManagement from "@/pages/admin/account-management";
 import Profile from "@/pages/profile";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -31,6 +33,8 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
           <Route path="/forum" component={Forum} />
           <Route path="/forum/create" component={CreatePost} />
           <Route path="/forum/posts/:id" component={ForumPost} />

@@ -24,11 +24,11 @@ export default function Landing() {
   ];
 
   const handleGetStarted = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
   };
 
   const handleEnrollNow = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
   };
 
   return (
