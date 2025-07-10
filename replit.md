@@ -160,3 +160,4 @@ The application follows a monorepo structure with clear separation between clien
 - **Course Access Management**: Enhanced account management to show user enrollments and purchases, with ability to grant course access without payment
 - **Course Builder & Viewer System**: Complete course content management system with hierarchical structure (courses > modules > lessons), lesson types (text, video, quiz), progress tracking, and interactive learning experience with navigation between lessons
 - **Admin Dashboard**: Fixed routing issues and restored full admin dashboard functionality for course and user management
+- **Course Builder Fix**: Resolved authentication middleware issues and API endpoint configuration for full course builder functionality

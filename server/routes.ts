@@ -331,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      console.log('Admin check for user:', userId, 'isAdmin:', user?.isAdmin, 'canCreateCourses:', user?.canCreateCourses, 'isSuperAdmin:', user?.isSuperAdmin);
+      // console.log('Admin check for user:', userId, 'isAdmin:', user?.isAdmin, 'canCreateCourses:', user?.canCreateCourses, 'isSuperAdmin:', user?.isSuperAdmin);
       
       // Check if user is admin OR has course creation permissions OR is super admin
       if (!user?.isAdmin && !user?.canCreateCourses && !user?.isSuperAdmin) {
