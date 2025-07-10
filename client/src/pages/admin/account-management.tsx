@@ -8,6 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings, BookOpen, CreditCard, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { Link } from "wouter";
 
@@ -62,9 +73,10 @@ const PermissionBadge = ({ permission, label, icon: Icon }: {
   </Badge>
 );
 
-const UserPermissionsCard = ({ user, onUpdate }: {
+const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
   user: User;
   onUpdate: (userId: string, permissions: UserPermissions) => void;
+  onDelete: (userId: string) => void;
 }) => {
   const [permissions, setPermissions] = useState<UserPermissions>({
     canCreateBlogPosts: user.canCreateBlogPosts,
@@ -334,8 +346,49 @@ const UserPermissionsCard = ({ user, onUpdate }: {
               </Collapsible>
             </div>
 
-            <div className="text-xs text-neutral-500">
-              Joined {new Date(user.createdAt).toLocaleDateString()}
+            <div className="flex items-center justify-between border-t pt-3">
+              <div className="text-xs text-neutral-500">
+                Joined {new Date(user.createdAt).toLocaleDateString()}
+              </div>
+              
+              {/* Delete User Button */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete User
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {user.firstName || user.lastName ? 
+                        `${user.firstName || ''} ${user.lastName || ''}`.trim() : 
+                        'this user'
+                      }'s account ({user.email})?
+                      <br /><br />
+                      <strong>This action cannot be undone.</strong> All user data, including:
+                      <ul className="mt-2 ml-4 list-disc text-sm">
+                        <li>Course enrollments and progress</li>
+                        <li>Forum posts and replies</li>
+                        <li>Blog comments</li>
+                        <li>Purchase history</li>
+                      </ul>
+                      will be permanently deleted.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDelete(user.id)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete User
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         )}
@@ -406,12 +459,37 @@ export default function AccountManagement() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest("DELETE", `/api/admin/users/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: "Success",
+        description: "User deleted successfully!",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUpdatePermissions = (userId: string, permissions: UserPermissions) => {
     updatePermissionsMutation.mutate({ userId, permissions });
   };
 
   const handleGrantCourseAccess = (userId: string, courseId: number) => {
     grantCourseAccessMutation.mutate({ userId, courseId });
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    deleteUserMutation.mutate(userId);
   };
 
   if (isLoading) {
@@ -525,6 +603,7 @@ export default function AccountManagement() {
               key={user.id}
               user={user}
               onUpdate={handleUpdatePermissions}
+              onDelete={handleDeleteUser}
             />
           ))
         ) : searchTerm ? (

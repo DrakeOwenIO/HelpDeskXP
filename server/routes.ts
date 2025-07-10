@@ -621,6 +621,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/admin/users/:id', isAuthenticated, isSuperAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      await storage.deleteUser(userId);
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   app.get('/api/admin/courses', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const courses = await storage.getCourses();

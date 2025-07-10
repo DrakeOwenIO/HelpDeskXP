@@ -64,6 +64,7 @@ export interface IStorage {
     isSuperAdmin?: boolean;
   }): Promise<User>;
   grantCourseAccess(userId: number, courseId: number): Promise<void>;
+  deleteUser(userId: number): Promise<void>;
   
   // Course operations
   getCourses(): Promise<Course[]>;
@@ -335,6 +336,12 @@ export class DatabaseStorage implements IStorage {
         progress: 0,
       });
     }
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    // Delete user and all cascade deletes will handle related records
+    // The schema has onDelete: 'cascade' for all foreign key relationships
+    await db.delete(users).where(eq(users.id, userId));
   }
 
   // Course operations
