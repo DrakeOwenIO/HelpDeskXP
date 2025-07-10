@@ -230,32 +230,101 @@ const UserPermissionsCard = ({ user, onUpdate, onGrantCourseAccess }: {
             )}
           </div>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            <PermissionBadge
-              permission={user.isSuperAdmin}
-              label="Super Admin"
-              icon={Shield}
-            />
-            <PermissionBadge
-              permission={user.canCreateBlogPosts}
-              label="Blog Admin"
-              icon={Edit}
-            />
-            <PermissionBadge
-              permission={user.canCreateCourses}
-              label="Course Admin"
-              icon={Eye}
-            />
-            <PermissionBadge
-              permission={user.canModerateForum}
-              label="Forum Moderator"
-              icon={Trash2}
-            />
-            <PermissionBadge
-              permission={user.canManageAccounts}
-              label="Account Manager"
-              icon={Settings}
-            />
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <PermissionBadge
+                permission={user.isSuperAdmin}
+                label="Super Admin"
+                icon={Shield}
+              />
+              <PermissionBadge
+                permission={user.canCreateBlogPosts}
+                label="Blog Admin"
+                icon={Edit}
+              />
+              <PermissionBadge
+                permission={user.canCreateCourses}
+                label="Course Admin"
+                icon={Eye}
+              />
+              <PermissionBadge
+                permission={user.canModerateForum}
+                label="Forum Moderator"
+                icon={Trash2}
+              />
+              <PermissionBadge
+                permission={user.canManageAccounts}
+                label="Account Manager"
+                icon={Settings}
+              />
+            </div>
+
+            {/* Course Access Section */}
+            <div className="border-t pt-3">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-neutral-900 flex items-center">
+                  <BookOpen className="w-4 h-4 mr-1" />
+                  Course Access
+                </h4>
+                <Button
+                  onClick={() => onGrantCourseAccess(user.id, 1)}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                >
+                  <Gift className="w-3 h-3 mr-1" />
+                  Grant Main Course
+                </Button>
+              </div>
+              
+              {user.enrollments && user.enrollments.length > 0 ? (
+                <div className="space-y-2">
+                  {user.enrollments.map((enrollment) => (
+                    <div key={enrollment.id} className="bg-green-50 border border-green-200 rounded-md p-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-medium text-green-800">{enrollment.courseName}</p>
+                          <p className="text-xs text-green-600">Progress: {enrollment.progress}%</p>
+                        </div>
+                        <div className="text-xs text-green-600">
+                          Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-500 italic">No course enrollments</p>
+              )}
+
+              {user.purchases && user.purchases.length > 0 && (
+                <div className="mt-3">
+                  <h5 className="text-xs font-medium text-neutral-700 mb-2 flex items-center">
+                    <CreditCard className="w-3 h-3 mr-1" />
+                    Purchases
+                  </h5>
+                  <div className="space-y-1">
+                    {user.purchases.map((purchase) => (
+                      <div key={purchase.id} className="bg-blue-50 border border-blue-200 rounded-md p-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium text-blue-800">{purchase.courseName}</p>
+                          <div className="text-right">
+                            <p className="text-xs font-medium text-blue-800">${purchase.amount}</p>
+                            <p className="text-xs text-blue-600">
+                              {new Date(purchase.purchasedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="text-xs text-neutral-500">
+              Joined {new Date(user.createdAt).toLocaleDateString()}
+            </div>
           </div>
         )}
       </CardContent>
