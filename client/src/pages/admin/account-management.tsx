@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings } from "lucide-react";
+import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings, BookOpen, CreditCard, Plus, Gift } from "lucide-react";
 import { Link } from "wouter";
 
 interface User {
@@ -21,6 +21,24 @@ interface User {
   canManageAccounts: boolean;
   isSuperAdmin: boolean;
   createdAt: string;
+  enrollments?: Enrollment[];
+  purchases?: Purchase[];
+}
+
+interface Enrollment {
+  id: number;
+  courseId: number;
+  courseName: string;
+  progress: number;
+  enrolledAt: string;
+}
+
+interface Purchase {
+  id: number;
+  courseId: number;
+  courseName: string;
+  amount: number;
+  purchasedAt: string;
 }
 
 interface UserPermissions {
@@ -42,9 +60,10 @@ const PermissionBadge = ({ permission, label, icon: Icon }: {
   </Badge>
 );
 
-const UserPermissionsCard = ({ user, onUpdate }: {
+const UserPermissionsCard = ({ user, onUpdate, onGrantCourseAccess }: {
   user: User;
   onUpdate: (userId: string, permissions: UserPermissions) => void;
+  onGrantCourseAccess: (userId: string, courseId: number) => void;
 }) => {
   const [permissions, setPermissions] = useState<UserPermissions>({
     canCreateBlogPosts: user.canCreateBlogPosts,
@@ -273,8 +292,33 @@ export default function AccountManagement() {
     },
   });
 
+  const grantCourseAccessMutation = useMutation({
+    mutationFn: async ({ userId, courseId }: { userId: string; courseId: number }) => {
+      await apiRequest("POST", `/api/admin/users/${userId}/grant-course`, { courseId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: "Success",
+        description: "Course access granted successfully!",
+      });
+    },
+    onError: (error) => {
+      console.error("Error granting course access:", error);
+      toast({
+        title: "Error",
+        description: "Failed to grant course access. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUpdatePermissions = (userId: string, permissions: UserPermissions) => {
     updatePermissionsMutation.mutate({ userId, permissions });
+  };
+
+  const handleGrantCourseAccess = (userId: string, courseId: number) => {
+    grantCourseAccessMutation.mutate({ userId, courseId });
   };
 
   if (isLoading) {
@@ -372,6 +416,7 @@ export default function AccountManagement() {
             key={user.id}
             user={user}
             onUpdate={handleUpdatePermissions}
+            onGrantCourseAccess={handleGrantCourseAccess}
           />
         ))}
       </div>

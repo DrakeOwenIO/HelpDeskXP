@@ -40,6 +40,7 @@ export interface IStorage {
   
   // Account management operations
   getAllUsers(): Promise<User[]>;
+  getAllUsersWithCourseData(): Promise<(User & { enrollments: any[], purchases: any[] })[]>;
   updateUserPermissions(userId: string, permissions: {
     canCreateBlogPosts?: boolean;
     canCreateCourses?: boolean;
@@ -47,6 +48,7 @@ export interface IStorage {
     canManageAccounts?: boolean;
     isSuperAdmin?: boolean;
   }): Promise<User>;
+  grantCourseAccess(userId: string, courseId: number): Promise<void>;
   
   // Course operations
   getCourses(): Promise<Course[]>;
@@ -140,6 +142,46 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
+  async getAllUsersWithCourseData(): Promise<(User & { enrollments: any[], purchases: any[] })[]> {
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    
+    const usersWithData = await Promise.all(allUsers.map(async (user) => {
+      // Get enrollments with course names
+      const userEnrollments = await db
+        .select({
+          id: enrollments.id,
+          courseId: enrollments.courseId,
+          courseName: courses.title,
+          progress: enrollments.progress,
+          enrolledAt: enrollments.createdAt,
+        })
+        .from(enrollments)
+        .leftJoin(courses, eq(enrollments.courseId, courses.id))
+        .where(eq(enrollments.userId, user.id));
+
+      // Get purchases with course names
+      const userPurchases = await db
+        .select({
+          id: purchases.id,
+          courseId: purchases.courseId,
+          courseName: courses.title,
+          amount: purchases.amount,
+          purchasedAt: purchases.createdAt,
+        })
+        .from(purchases)
+        .leftJoin(courses, eq(purchases.courseId, courses.id))
+        .where(eq(purchases.userId, user.id));
+
+      return {
+        ...user,
+        enrollments: userEnrollments,
+        purchases: userPurchases,
+      };
+    }));
+
+    return usersWithData;
+  }
+
   async updateUserPermissions(userId: string, permissions: {
     canCreateBlogPosts?: boolean;
     canCreateCourses?: boolean;
@@ -156,6 +198,23 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updatedUser;
+  }
+
+  async grantCourseAccess(userId: string, courseId: number): Promise<void> {
+    // Check if already enrolled
+    const existingEnrollment = await db
+      .select()
+      .from(enrollments)
+      .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId)))
+      .limit(1);
+
+    if (existingEnrollment.length === 0) {
+      await db.insert(enrollments).values({
+        userId,
+        courseId,
+        progress: 0,
+      });
+    }
   }
 
   // Course operations

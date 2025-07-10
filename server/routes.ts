@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Account management routes (Super Admin only)
   app.get('/api/admin/users', isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
+      const users = await storage.getAllUsersWithCourseData();
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -636,6 +636,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin blog posts:", error);
       res.status(500).json({ message: "Failed to fetch admin blog posts" });
+    }
+  });
+
+  // Grant course access endpoint
+  app.post('/api/admin/users/:userId/grant-course', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isSuperAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { userId: targetUserId } = req.params;
+      const { courseId } = req.body;
+
+      if (!targetUserId || !courseId) {
+        return res.status(400).json({ message: "User ID and Course ID are required" });
+      }
+
+      await storage.grantCourseAccess(targetUserId, courseId);
+      res.json({ message: "Course access granted successfully" });
+    } catch (error) {
+      console.error("Error granting course access:", error);
+      res.status(500).json({ message: "Failed to grant course access" });
     }
   });
 
