@@ -559,7 +559,7 @@ export default function CourseBuilder() {
                 <CardTitle>Course Preview</CardTitle>
               </CardHeader>
               <CardContent>
-                <Link href={`/courses/${courseId}`}>
+                <Link href={`/admin/courses/${courseId}/preview`}>
                   <Button className="w-full">
                     <Play className="w-4 h-4 mr-2" />
                     Preview Course

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, CheckCircle2, Play, Clock, FileText, Video, Award, ChevronLeft, ChevronRight } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { ArrowLeft, CheckCircle2, Play, Clock, FileText, Video, Award, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Link } from "wouter";
-import type { Course, CourseModule, CourseLesson, UserLessonProgress } from "@shared/schema";
+import type { Course, CourseModule, CourseLesson } from "@shared/schema";
 
 interface CourseWithContent extends Course {
   modules: (CourseModule & {
@@ -22,136 +19,41 @@ interface CourseWithContent extends Course {
   })[];
 }
 
-interface EnrollmentData {
-  id: number;
-  userId: string;
-  courseId: number;
-  progress: number;
-  completed: boolean;
-  enrolledAt: string;
-}
-
-export default function CourseViewer() {
+export default function CoursePreview() {
   const { courseId } = useParams<{ courseId: string }>();
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
   
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
 
-  // Fetch course content with modules and lessons
+  // Fetch course preview content (includes drafts)
   const { data: course, isLoading: courseLoading } = useQuery<CourseWithContent>({
-    queryKey: ['/api/courses', courseId, 'viewer'],
+    queryKey: [`/api/admin/courses/${courseId}/preview`],
     enabled: !!courseId && !!user,
   });
 
-  // Check if user has access to this course
-  const { data: hasAccess, isLoading: accessLoading } = useQuery<boolean>({
-    queryKey: ['/api/user/course-access', courseId],
-    enabled: !!courseId && !!user,
-  });
+  // Auto-select first lesson when course loads
+  useEffect(() => {
+    if (course && course.modules.length > 0 && course.modules[0].lessons.length > 0 && !selectedLessonId) {
+      setSelectedLessonId(course.modules[0].lessons[0].id);
+    }
+  }, [course, selectedLessonId]);
 
-  // Get user enrollment and progress
-  const { data: enrollment, isLoading: enrollmentLoading } = useQuery<EnrollmentData>({
-    queryKey: ['/api/user/enrollments', courseId],
-    enabled: !!courseId && !!user && hasAccess,
-    retry: false,
-  });
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLocation("/api/login");
+    }
+  }, [user, authLoading, setLocation]);
 
-  // Mutation to update lesson progress
-  const updateProgressMutation = useMutation({
-    mutationFn: async ({ lessonId, isCompleted }: { lessonId: number; isCompleted: boolean }) => {
-      return await apiRequest('POST', `/api/lessons/${lessonId}/progress`, { isCompleted });
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user/enrollments', courseId] });
-      
-      // Update local state
-      setCompletedLessons(prev => {
-        const newSet = new Set(prev);
-        if (variables.isCompleted) {
-          newSet.add(variables.lessonId);
-        } else {
-          newSet.delete(variables.lessonId);
-        }
-        return newSet;
-      });
-      
-      toast({
-        title: variables.isCompleted ? "Lesson Completed" : "Progress Updated",
-        description: variables.isCompleted 
-          ? "Great job! Keep up the good work." 
-          : "Progress saved successfully.",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to update progress. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Find the currently selected lesson
   const selectedLesson = course?.modules
     .flatMap(module => module.lessons)
     .find(lesson => lesson.id === selectedLessonId);
 
-  // Auto-select first lesson if none selected
-  useEffect(() => {
-    if (course && !selectedLessonId) {
-      const firstLesson = course.modules[0]?.lessons[0];
-      if (firstLesson) {
-        setSelectedLessonId(firstLesson.id);
-      }
-    }
-  }, [course, selectedLessonId]);
-
-  // Loading states
-  if (authLoading || courseLoading || accessLoading || enrollmentLoading) {
+  if (authLoading || courseLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Access denied
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="text-center">Access Denied</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p>You need to purchase this course to access the content.</p>
-              <Link href={`/courses/${courseId}`}>
-                <Button>Go to Course Details</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -168,8 +70,8 @@ export default function CourseViewer() {
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p>The course you're looking for doesn't exist.</p>
-              <Link href="/courses">
-                <Button>Browse Courses</Button>
+              <Link href="/admin/courses">
+                <Button>Back to Course Management</Button>
               </Link>
             </CardContent>
           </Card>
@@ -195,16 +97,6 @@ export default function CourseViewer() {
     }
   };
 
-  const handleCompleteLesson = () => {
-    if (selectedLessonId) {
-      const isCurrentlyCompleted = completedLessons.has(selectedLessonId);
-      updateProgressMutation.mutate({
-        lessonId: selectedLessonId,
-        isCompleted: !isCurrentlyCompleted,
-      });
-    }
-  };
-
   const getContentTypeIcon = (contentType: string) => {
     switch (contentType) {
       case 'video':
@@ -225,26 +117,25 @@ export default function CourseViewer() {
         <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           {/* Course Header */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <Link href={`/courses/${courseId}`}>
+            <Link href={`/admin/course-builder/${courseId}`}>
               <Button variant="ghost" size="sm" className="mb-4">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Course
+                Back to Course Builder
               </Button>
             </Link>
+            
+            <div className="flex items-center gap-2 mb-2">
+              <Eye className="h-4 w-4 text-blue-600" />
+              <Badge variant="secondary">Preview Mode</Badge>
+            </div>
             
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               {course.title}
             </h1>
             
-            {enrollment && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Progress</span>
-                  <span className="font-medium">{enrollment.progress}%</span>
-                </div>
-                <Progress value={enrollment.progress} className="h-2" />
-              </div>
-            )}
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Viewing draft content including unpublished modules and lessons
+            </p>
           </div>
 
           {/* Course Content */}
@@ -252,14 +143,18 @@ export default function CourseViewer() {
             <div className="p-4 space-y-4">
               {course.modules.map((module, moduleIndex) => (
                 <div key={module.id}>
-                  <h3 className="font-medium text-gray-900 dark:text-white mb-2">
-                    {moduleIndex + 1}. {module.title}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {moduleIndex + 1}. {module.title}
+                    </h3>
+                    <Badge variant={module.isPublished ? 'default' : 'secondary'} className="text-xs">
+                      {module.isPublished ? 'Published' : 'Draft'}
+                    </Badge>
+                  </div>
                   
                   <div className="space-y-1 ml-4">
                     {module.lessons.map((lesson, lessonIndex) => {
                       const isSelected = lesson.id === selectedLessonId;
-                      const isCompleted = completedLessons.has(lesson.id);
                       
                       return (
                         <button
@@ -273,19 +168,20 @@ export default function CourseViewer() {
                         >
                           <div className="flex items-center gap-3">
                             <div className="flex-shrink-0">
-                              {isCompleted ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              ) : (
-                                getContentTypeIcon(lesson.contentType)
-                              )}
+                              {getContentTypeIcon(lesson.contentType)}
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium truncate ${
-                                isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
-                              }`}>
-                                {moduleIndex + 1}.{lessonIndex + 1} {lesson.title}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className={`text-sm font-medium truncate ${
+                                  isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'
+                                }`}>
+                                  {moduleIndex + 1}.{lessonIndex + 1} {lesson.title}
+                                </p>
+                                <Badge variant={lesson.isPublished ? 'default' : 'secondary'} className="text-xs">
+                                  {lesson.isPublished ? 'Pub' : 'Draft'}
+                                </Badge>
+                              </div>
                               
                               {lesson.duration && (
                                 <div className="flex items-center gap-1 mt-1">
@@ -317,9 +213,14 @@ export default function CourseViewer() {
               <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                      {selectedLesson.title}
-                    </h1>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {selectedLesson.title}
+                      </h1>
+                      <Badge variant={selectedLesson.isPublished ? 'default' : 'secondary'}>
+                        {selectedLesson.isPublished ? 'Published' : 'Draft'}
+                      </Badge>
+                    </div>
                     {selectedLesson.description && (
                       <p className="text-gray-600 dark:text-gray-400">
                         {selectedLesson.description}
@@ -332,20 +233,11 @@ export default function CourseViewer() {
                       {selectedLesson.contentType}
                     </Badge>
                     
-                    <Button
-                      onClick={handleCompleteLesson}
-                      variant={completedLessons.has(selectedLesson.id) ? "secondary" : "default"}
-                      disabled={updateProgressMutation.isPending}
-                    >
-                      {completedLessons.has(selectedLesson.id) ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Completed
-                        </>
-                      ) : (
-                        "Mark Complete"
-                      )}
-                    </Button>
+                    <Link href={`/admin/lesson-editor/${courseId}/${selectedLesson.id}`}>
+                      <Button variant="outline" size="sm">
+                        Edit Lesson
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -459,7 +351,7 @@ export default function CourseViewer() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Select a lesson to start learning</p>
+                <p className="text-gray-500">Select a lesson to preview</p>
               </div>
             </div>
           )}

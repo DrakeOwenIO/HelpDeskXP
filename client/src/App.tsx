@@ -17,6 +17,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCourses from "@/pages/admin/courses";
 import CourseBuilder from "@/pages/admin/course-builder";
 import LessonEditor from "@/pages/admin/lesson-editor";
+import CoursePreview from "@/pages/admin/course-preview";
 import Blog from "@/pages/blog";
 import BlogPost from "@/pages/blog-post";
 import AccountManagement from "@/pages/admin/account-management";
@@ -54,6 +55,7 @@ function Router() {
           <Route path="/admin/courses/:courseId/builder" component={CourseBuilder} />
           <Route path="/admin/course-builder/:courseId/lesson/:lessonId" component={LessonEditor} />
           <Route path="/admin/course-builder/:courseId" component={CourseBuilder} />
+          <Route path="/admin/courses/:courseId/preview" component={CoursePreview} />
           <Route path="/admin/accounts" component={AccountManagement} />
           <Route path="/profile" component={Profile} />
         </>

@@ -371,6 +371,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin middleware (define early in the file)
+  const isAdmin = async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check if user is admin OR has course creation permissions OR is super admin
+      if (!user?.isAdmin && !user?.canCreateCourses && !user?.isSuperAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      next();
+    } catch (error) {
+      console.error("Error in isAdmin middleware:", error);
+      res.status(500).json({ message: "Failed to verify admin status" });
+    }
+  };
+
+  // Super Admin middleware for account management
+  const isSuperAdmin = async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.isSuperAdmin) {
+        return res.status(403).json({ message: "Super Admin access required" });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to verify super admin status" });
+    }
+  };
+
+  // Course preview route (includes draft content) - Admin only
+  app.get('/api/admin/courses/:courseId/preview', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const course = await storage.getCourseWithModulesAndLessonsPreview(courseId);
+      
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course preview:", error);
+      res.status(500).json({ message: "Failed to fetch course preview" });
+    }
+  });
+
   // Check course access endpoint
   app.get('/api/user/course-access/:courseId', isAuthenticated, async (req: any, res) => {
     try {
@@ -420,37 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
-  const isAdmin = async (req: any, res: any, next: any) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      // console.log('Admin check for user:', userId, 'isAdmin:', user?.isAdmin, 'canCreateCourses:', user?.canCreateCourses, 'isSuperAdmin:', user?.isSuperAdmin);
-      
-      // Check if user is admin OR has course creation permissions OR is super admin
-      if (!user?.isAdmin && !user?.canCreateCourses && !user?.isSuperAdmin) {
-        return res.status(403).json({ message: "Admin access required" });
-      }
-      next();
-    } catch (error) {
-      console.error("Error in isAdmin middleware:", error);
-      res.status(500).json({ message: "Failed to verify admin status" });
-    }
-  };
-
-  // Super Admin middleware for account management
-  const isSuperAdmin = async (req: any, res: any, next: any) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user?.isSuperAdmin) {
-        return res.status(403).json({ message: "Super Admin access required" });
-      }
-      next();
-    } catch (error) {
-      res.status(500).json({ message: "Failed to verify super admin status" });
-    }
-  };
+  // Admin routes (middleware defined earlier)
 
   // Account management routes (Super Admin only)
   app.get('/api/admin/users', isAuthenticated, isSuperAdmin, async (req, res) => {

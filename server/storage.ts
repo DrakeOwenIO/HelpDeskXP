@@ -126,6 +126,7 @@ export interface IStorage {
   
   // Course viewer operations
   getCourseWithModulesAndLessons(courseId: number): Promise<Course & { modules: (CourseModule & { lessons: CourseLesson[] })[] } | undefined>;
+  getCourseWithModulesAndLessonsPreview(courseId: number): Promise<Course & { modules: (CourseModule & { lessons: CourseLesson[] })[] } | undefined>;
   getUserLessonProgress(userId: string, lessonId: number): Promise<UserLessonProgress | undefined>;
   updateLessonProgress(userId: string, lessonId: number, isCompleted: boolean): Promise<UserLessonProgress>;
   getUserCourseProgress(userId: string, courseId: number): Promise<{ progress: number; completed: boolean }>;
@@ -797,6 +798,28 @@ export class DatabaseStorage implements IStorage {
 
     const modulesWithLessons = await Promise.all(
       modules.map(async (module) => {
+        const lessons = await db.select().from(courseLessons)
+          .where(eq(courseLessons.moduleId, module.id))
+          .orderBy(courseLessons.orderIndex);
+        return { ...module, lessons };
+      })
+    );
+
+    return { ...course, modules: modulesWithLessons };
+  }
+
+  async getCourseWithModulesAndLessonsPreview(courseId: number): Promise<Course & { modules: (CourseModule & { lessons: CourseLesson[] })[] } | undefined> {
+    const course = await this.getCourse(courseId);
+    if (!course) return undefined;
+
+    // Get ALL modules (including drafts) for preview
+    const modules = await db.select().from(courseModules)
+      .where(eq(courseModules.courseId, courseId))
+      .orderBy(courseModules.orderIndex);
+
+    const modulesWithLessons = await Promise.all(
+      modules.map(async (module) => {
+        // Get ALL lessons (including drafts) for preview
         const lessons = await db.select().from(courseLessons)
           .where(eq(courseLessons.moduleId, module.id))
           .orderBy(courseLessons.orderIndex);
