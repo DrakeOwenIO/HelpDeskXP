@@ -588,20 +588,6 @@ export default function LessonEditor() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Lesson Preview */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Preview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link href={`/courses/${courseId}/lessons/${lessonId}`}>
-                  <Button className="w-full">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Preview Lesson
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
 
             {/* Quick Stats */}
             <Card>
