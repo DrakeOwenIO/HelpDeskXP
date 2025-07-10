@@ -180,7 +180,7 @@ export default function AdminCourses() {
   const onSubmit = (data: CourseFormData) => {
     const courseData: InsertCourse = {
       ...data,
-      price: data.price ? parseFloat(data.price) : null,
+      price: data.price || "0", // Keep as string for schema validation
       learningObjectives: typeof data.learningObjectives === 'string' 
         ? data.learningObjectives.split('\n').filter(Boolean)
         : data.learningObjectives,

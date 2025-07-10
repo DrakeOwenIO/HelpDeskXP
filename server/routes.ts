@@ -505,10 +505,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       console.log("Course update request body:", JSON.stringify(req.body, null, 2));
       
-      // Handle learningObjectives transformation
+      // Handle data transformations
       const courseData = { ...req.body };
       if (typeof courseData.learningObjectives === 'string') {
         courseData.learningObjectives = courseData.learningObjectives.split('\n').filter(Boolean);
+      }
+      // Convert price to string if it's a number
+      if (typeof courseData.price === 'number') {
+        courseData.price = courseData.price.toString();
       }
       
       const validatedData = insertCourseSchema.partial().parse(courseData);
