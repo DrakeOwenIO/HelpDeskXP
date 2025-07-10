@@ -84,9 +84,8 @@ const courseVideoUpload = multer({
     }
   }
 });
-import { insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema, insertForumPostSchema, insertForumReplySchema, insertBlogPostSchema, insertBlogCommentSchema, insertCourseModuleSchema, insertCourseLessonSchema, localUserRegistrationSchema, localUserLoginSchema } from "@shared/schema";
+import { insertCourseSchema, insertEnrollmentSchema, insertPurchaseSchema, insertForumPostSchema, insertForumReplySchema, insertBlogPostSchema, insertBlogCommentSchema, insertCourseModuleSchema, insertCourseLessonSchema } from "@shared/schema";
 import { z } from "zod";
-import session from "express-session";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -100,116 +99,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Local authentication routes
-  app.post('/api/auth/register', async (req, res) => {
-    try {
-      const validatedData = localUserRegistrationSchema.parse(req.body);
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(validatedData.email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists with this email" });
-      }
-      
-      const user = await storage.createLocalUser(validatedData);
-      
-      // Create session for the new user
-      (req.session as any).userId = user.id;
-      (req.session as any).userType = 'local';
-      
-      res.status(201).json({ 
-        message: "User registered successfully", 
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          authType: user.authType
-        }
-      });
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      if (error.issues) {
-        return res.status(400).json({ message: "Validation failed", errors: error.issues });
-      }
-      res.status(500).json({ message: "Registration failed" });
-    }
-  });
-
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { email, password } = localUserLoginSchema.parse(req.body);
-      
-      const user = await storage.validateLocalUser(email, password);
-      if (!user) {
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
-      
-      // Create session for the user
-      (req.session as any).userId = user.id;
-      (req.session as any).userType = 'local';
-      
-      res.json({ 
-        message: "Login successful", 
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          authType: user.authType
-        }
-      });
-    } catch (error: any) {
-      console.error("Login error:", error);
-      if (error.issues) {
-        return res.status(400).json({ message: "Validation failed", errors: error.issues });
-      }
-      res.status(500).json({ message: "Login failed" });
-    }
-  });
-
-  app.post('/api/auth/logout', async (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        console.error("Logout error:", err);
-        return res.status(500).json({ message: "Logout failed" });
-      }
-      res.clearCookie('connect.sid');
-      res.json({ message: "Logout successful" });
-    });
-  });
-
-  // Route to get current user for local auth
-  app.get('/api/auth/local-user', async (req, res) => {
-    try {
-      const session = req.session as any;
-      if (!session.userId || session.userType !== 'local') {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      const user = await storage.getUser(session.userId);
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
-      res.json({
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        authType: user.authType,
-        canCreateBlogPosts: user.canCreateBlogPosts,
-        canCreateCourses: user.canCreateCourses,
-        canModerateForum: user.canModerateForum,
-        canManageAccounts: user.canManageAccounts,
-        isSuperAdmin: user.isSuperAdmin,
-      });
-    } catch (error) {
-      console.error("Error fetching local user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });

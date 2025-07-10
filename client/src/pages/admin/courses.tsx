@@ -55,7 +55,7 @@ export default function AdminCourses() {
   const { data: courses, isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
     retry: false,
-    enabled: !!user && user?.isAdmin,
+    enabled: isAuthenticated && user?.isAdmin,
   });
 
   const form = useForm<CourseFormData>({
