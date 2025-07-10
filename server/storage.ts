@@ -146,37 +146,70 @@ export class DatabaseStorage implements IStorage {
     const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
     
     const usersWithData = await Promise.all(allUsers.map(async (user) => {
-      // Get enrollments with course names
-      const userEnrollments = await db
-        .select({
-          id: enrollments.id,
-          courseId: enrollments.courseId,
-          courseName: courses.title,
-          progress: enrollments.progress,
-          enrolledAt: enrollments.createdAt,
-        })
-        .from(enrollments)
-        .leftJoin(courses, eq(enrollments.courseId, courses.id))
-        .where(eq(enrollments.userId, user.id));
+      try {
+        // Get enrollments with course names - simplified query
+        const userEnrollments = await db
+          .select()
+          .from(enrollments)
+          .where(eq(enrollments.userId, user.id));
 
-      // Get purchases with course names
-      const userPurchases = await db
-        .select({
-          id: purchases.id,
-          courseId: purchases.courseId,
-          courseName: courses.title,
-          amount: purchases.amount,
-          purchasedAt: purchases.createdAt,
-        })
-        .from(purchases)
-        .leftJoin(courses, eq(purchases.courseId, courses.id))
-        .where(eq(purchases.userId, user.id));
+        // Get course names for enrollments
+        const enrollmentsWithNames = await Promise.all(
+          userEnrollments.map(async (enrollment) => {
+            const course = await db
+              .select()
+              .from(courses)
+              .where(eq(courses.id, enrollment.courseId))
+              .limit(1);
+            
+            return {
+              id: enrollment.id,
+              courseId: enrollment.courseId,
+              courseName: course[0]?.title || 'Unknown Course',
+              progress: enrollment.progress,
+              enrolledAt: enrollment.enrolledAt,
+            };
+          })
+        );
 
-      return {
-        ...user,
-        enrollments: userEnrollments,
-        purchases: userPurchases,
-      };
+        // Get purchases with course names - simplified query
+        const userPurchases = await db
+          .select()
+          .from(purchases)
+          .where(eq(purchases.userId, user.id));
+
+        // Get course names for purchases
+        const purchasesWithNames = await Promise.all(
+          userPurchases.map(async (purchase) => {
+            const course = await db
+              .select()
+              .from(courses)
+              .where(eq(courses.id, purchase.courseId))
+              .limit(1);
+            
+            return {
+              id: purchase.id,
+              courseId: purchase.courseId,
+              courseName: course[0]?.title || 'Unknown Course',
+              amount: purchase.amount,
+              purchasedAt: purchase.createdAt,
+            };
+          })
+        );
+
+        return {
+          ...user,
+          enrollments: enrollmentsWithNames,
+          purchases: purchasesWithNames,
+        };
+      } catch (error) {
+        console.error(`Error fetching data for user ${user.id}:`, error);
+        return {
+          ...user,
+          enrollments: [],
+          purchases: [],
+        };
+      }
     }));
 
     return usersWithData;
