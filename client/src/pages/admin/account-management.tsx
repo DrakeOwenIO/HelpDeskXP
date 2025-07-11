@@ -3,11 +3,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +29,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Save, Shield, User, Edit, Eye, Trash2, Settings, BookOpen, CreditCard, ChevronDown, ChevronRight, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Shield,
+  User,
+  Edit,
+  Eye,
+  Trash2,
+  Settings,
+  BookOpen,
+  CreditCard,
+  ChevronDown,
+  ChevronRight,
+  Search,
+} from "lucide-react";
 import { Link } from "wouter";
 
 interface User {
@@ -62,20 +86,31 @@ interface UserPermissions {
   isSuperAdmin: boolean;
 }
 
-const PermissionBadge = ({ permission, label, icon: Icon }: {
+const PermissionBadge = ({
+  permission,
+  label,
+  icon: Icon,
+}: {
   permission: boolean;
   label: string;
   icon: any;
 }) => (
-  <Badge variant={permission ? "default" : "secondary"} className="flex items-center gap-1">
+  <Badge
+    variant={permission ? "default" : "secondary"}
+    className="flex items-center gap-1"
+  >
     <Icon className="w-3 h-3" />
     {label}
   </Badge>
 );
 
-const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
+const UserPermissionsCard = ({
+  user,
+  onUpdate,
+  onDelete,
+}: {
   user: User;
-  onUpdate: (userId: string, permissions: UserPermissions) => void;
+  onUpdate: (userId: string, permissions: UserPermissions, password?: string) => void;
   onDelete: (userId: string) => void;
 }) => {
   const [permissions, setPermissions] = useState<UserPermissions>({
@@ -86,20 +121,24 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
     isSuperAdmin: user.isSuperAdmin,
   });
 
+  const [newPassword, setNewPassword] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [courseAccessOpen, setCourseAccessOpen] = useState(false);
 
-  const hasChanges = JSON.stringify(permissions) !== JSON.stringify({
-    canCreateBlogPosts: user.canCreateBlogPosts,
-    canCreateCourses: user.canCreateCourses,
-    canModerateForum: user.canModerateForum,
-    canManageAccounts: user.canManageAccounts,
-    isSuperAdmin: user.isSuperAdmin,
-  });
+  const hasChanges =
+    JSON.stringify(permissions) !==
+    JSON.stringify({
+      canCreateBlogPosts: user.canCreateBlogPosts,
+      canCreateCourses: user.canCreateCourses,
+      canModerateForum: user.canModerateForum,
+      canManageAccounts: user.canManageAccounts,
+      isSuperAdmin: user.isSuperAdmin,
+    });
 
   const handleSave = () => {
-    onUpdate(user.id, permissions);
+    onUpdate(user.id, permissions, newPassword);
     setIsEditing(false);
+    setNewPassword('');
   };
 
   const getUserType = () => {
@@ -108,9 +147,9 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
       user.canCreateBlogPosts,
       user.canCreateCourses,
       user.canModerateForum,
-      user.canManageAccounts
+      user.canManageAccounts,
     ].filter(Boolean).length;
-    
+
     if (roleCount === 0) return "Member";
     if (roleCount === 1) {
       if (user.canCreateBlogPosts) return "Blog Admin";
@@ -129,7 +168,7 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
             {user.profileImageUrl ? (
               <img
                 src={user.profileImageUrl}
-                alt={`${user.firstName || 'User'} ${user.lastName || ''}`}
+                alt={`${user.firstName || "User"} ${user.lastName || ""}`}
                 className="w-10 h-10 rounded-full object-cover"
               />
             ) : (
@@ -139,10 +178,9 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
             )}
             <div>
               <CardTitle className="text-lg">
-                {user.firstName || user.lastName ? 
-                  `${user.firstName || ''} ${user.lastName || ''}`.trim() : 
-                  'Unnamed User'
-                }
+                {user.firstName || user.lastName
+                  ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+                  : "Unnamed User"}
               </CardTitle>
               <CardDescription>{user.email}</CardDescription>
               <Badge variant="outline" className="mt-1">
@@ -156,7 +194,7 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
             onClick={() => setIsEditing(!isEditing)}
           >
             <Edit className="w-4 h-4 mr-1" />
-            {isEditing ? 'Cancel' : 'Edit'}
+            {isEditing ? "Cancel" : "Edit"}
           </Button>
         </div>
       </CardHeader>
@@ -170,10 +208,16 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                   id={`${user.id}-blog`}
                   checked={permissions.canCreateBlogPosts}
                   onCheckedChange={(checked) =>
-                    setPermissions(prev => ({ ...prev, canCreateBlogPosts: !!checked }))
+                    setPermissions((prev) => ({
+                      ...prev,
+                      canCreateBlogPosts: !!checked,
+                    }))
                   }
                 />
-                <label htmlFor={`${user.id}-blog`} className="flex items-center gap-2">
+                <label
+                  htmlFor={`${user.id}-blog`}
+                  className="flex items-center gap-2"
+                >
                   <Edit className="w-4 h-4" />
                   Blog Admin
                 </label>
@@ -184,10 +228,16 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                   id={`${user.id}-course`}
                   checked={permissions.canCreateCourses}
                   onCheckedChange={(checked) =>
-                    setPermissions(prev => ({ ...prev, canCreateCourses: !!checked }))
+                    setPermissions((prev) => ({
+                      ...prev,
+                      canCreateCourses: !!checked,
+                    }))
                   }
                 />
-                <label htmlFor={`${user.id}-course`} className="flex items-center gap-2">
+                <label
+                  htmlFor={`${user.id}-course`}
+                  className="flex items-center gap-2"
+                >
                   <Eye className="w-4 h-4" />
                   Course Admin
                 </label>
@@ -198,10 +248,16 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                   id={`${user.id}-forum`}
                   checked={permissions.canModerateForum}
                   onCheckedChange={(checked) =>
-                    setPermissions(prev => ({ ...prev, canModerateForum: !!checked }))
+                    setPermissions((prev) => ({
+                      ...prev,
+                      canModerateForum: !!checked,
+                    }))
                   }
                 />
-                <label htmlFor={`${user.id}-forum`} className="flex items-center gap-2">
+                <label
+                  htmlFor={`${user.id}-forum`}
+                  className="flex items-center gap-2"
+                >
                   <Trash2 className="w-4 h-4" />
                   Forum Moderator
                 </label>
@@ -212,10 +268,16 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                   id={`${user.id}-accounts`}
                   checked={permissions.canManageAccounts}
                   onCheckedChange={(checked) =>
-                    setPermissions(prev => ({ ...prev, canManageAccounts: !!checked }))
+                    setPermissions((prev) => ({
+                      ...prev,
+                      canManageAccounts: !!checked,
+                    }))
                   }
                 />
-                <label htmlFor={`${user.id}-accounts`} className="flex items-center gap-2">
+                <label
+                  htmlFor={`${user.id}-accounts`}
+                  className="flex items-center gap-2"
+                >
                   <Settings className="w-4 h-4" />
                   Account Manager
                 </label>
@@ -226,22 +288,42 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                   id={`${user.id}-super`}
                   checked={permissions.isSuperAdmin}
                   onCheckedChange={(checked) =>
-                    setPermissions(prev => ({ ...prev, isSuperAdmin: !!checked }))
+                    setPermissions((prev) => ({
+                      ...prev,
+                      isSuperAdmin: !!checked,
+                    }))
                   }
                 />
-                <label htmlFor={`${user.id}-super`} className="flex items-center gap-2">
+                <label
+                  htmlFor={`${user.id}-super`}
+                  className="flex items-center gap-2"
+                >
                   <Shield className="w-4 h-4" />
                   Super Admin (Full Access)
                 </label>
               </div>
             </div>
 
-            {hasChanges && (
-              <Button onClick={handleSave} className="w-full">
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
-            )}
+            <div className="space-y-2">
+              <label
+                htmlFor={`password-${user.id}`}
+                className="block text-sm font-medium text-neutral-700"
+              >
+                New Password (optional)
+              </label>
+              <Input
+                id={`password-${user.id}`}
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Leave blank to keep current password"
+              />
+            </div>
+
+            <Button onClick={handleSave} className="w-full mt-4">
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -275,7 +357,10 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
 
             {/* Course Access Section - Collapsible */}
             <div className="border-t pt-3">
-              <Collapsible open={courseAccessOpen} onOpenChange={setCourseAccessOpen}>
+              <Collapsible
+                open={courseAccessOpen}
+                onOpenChange={setCourseAccessOpen}
+              >
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"
@@ -302,21 +387,33 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                   {user.enrollments && user.enrollments.length > 0 ? (
                     <div className="space-y-2">
                       {user.enrollments.map((enrollment) => (
-                        <div key={enrollment.id} className="bg-green-50 border border-green-200 rounded-md p-2">
+                        <div
+                          key={enrollment.id}
+                          className="bg-green-50 border border-green-200 rounded-md p-2"
+                        >
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-xs font-medium text-green-800">{enrollment.courseName}</p>
-                              <p className="text-xs text-green-600">Progress: {enrollment.progress}%</p>
+                              <p className="text-xs font-medium text-green-800">
+                                {enrollment.courseName}
+                              </p>
+                              <p className="text-xs text-green-600">
+                                Progress: {enrollment.progress}%
+                              </p>
                             </div>
                             <div className="text-xs text-green-600">
-                              Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                              Enrolled{" "}
+                              {new Date(
+                                enrollment.enrolledAt
+                              ).toLocaleDateString()}
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-neutral-500 italic">No course enrollments</p>
+                    <p className="text-xs text-neutral-500 italic">
+                      No course enrollments
+                    </p>
                   )}
 
                   {user.purchases && user.purchases.length > 0 && (
@@ -327,13 +424,22 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                       </h5>
                       <div className="space-y-1">
                         {user.purchases.map((purchase) => (
-                          <div key={purchase.id} className="bg-blue-50 border border-blue-200 rounded-md p-2">
+                          <div
+                            key={purchase.id}
+                            className="bg-blue-50 border border-blue-200 rounded-md p-2"
+                          >
                             <div className="flex items-center justify-between">
-                              <p className="text-xs font-medium text-blue-800">{purchase.courseName}</p>
+                              <p className="text-xs font-medium text-blue-800">
+                                {purchase.courseName}
+                              </p>
                               <div className="text-right">
-                                <p className="text-xs font-medium text-blue-800">${purchase.amount}</p>
+                                <p className="text-xs font-medium text-blue-800">
+                                  ${purchase.amount}
+                                </p>
                                 <p className="text-xs text-blue-600">
-                                  {new Date(purchase.purchasedAt).toLocaleDateString()}
+                                  {new Date(
+                                    purchase.purchasedAt
+                                  ).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -350,7 +456,7 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
               <div className="text-xs text-neutral-500">
                 Joined {new Date(user.createdAt).toLocaleDateString()}
               </div>
-              
+
               {/* Delete User Button */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -363,12 +469,17 @@ const UserPermissionsCard = ({ user, onUpdate, onDelete }: {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete User Account</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete {user.firstName || user.lastName ? 
-                        `${user.firstName || ''} ${user.lastName || ''}`.trim() : 
-                        'this user'
-                      }'s account ({user.email})?
-                      <br /><br />
-                      <strong>This action cannot be undone.</strong> All user data, including:
+                      Are you sure you want to delete{" "}
+                      {user.firstName || user.lastName
+                        ? `${user.firstName || ""} ${
+                            user.lastName || ""
+                          }`.trim()
+                        : "this user"}
+                      's account ({user.email})?
+                      <br />
+                      <br />
+                      <strong>This action cannot be undone.</strong> All user
+                      data, including:
                       <ul className="mt-2 ml-4 list-disc text-sm">
                         <li>Course enrollments and progress</li>
                         <li>Forum posts and replies</li>
@@ -403,26 +514,42 @@ export default function AccountManagement() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ['/api/admin/users'],
+    queryKey: ["/api/admin/users"],
   });
 
   // Filter users based on search term
-  const filteredUsers = users?.filter((user: User) => {
-    const searchLower = searchTerm.toLowerCase();
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim().toLowerCase();
-    const email = user.email?.toLowerCase() || '';
-    
-    return fullName.includes(searchLower) || 
-           email.includes(searchLower) ||
-           user.id.includes(searchLower);
-  }) || [];
+  const filteredUsers =
+    users?.filter((user: User) => {
+      const searchLower = searchTerm.toLowerCase();
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`
+        .trim()
+        .toLowerCase();
+      const email = user.email?.toLowerCase() || "";
+
+      return (
+        fullName.includes(searchLower) ||
+        email.includes(searchLower) ||
+        user.id.includes(searchLower)
+      );
+    }) || [];
 
   const updatePermissionsMutation = useMutation({
-    mutationFn: async ({ userId, permissions }: { userId: string; permissions: UserPermissions }) => {
-      await apiRequest("PUT", `/api/admin/users/${userId}/permissions`, { permissions });
+    mutationFn: async ({
+      userId,
+      permissions,
+      password,
+    }: {
+      userId: string;
+      permissions: UserPermissions;
+      password?: string;
+    }) => {
+      await apiRequest("PUT", `/api/admin/users/${userId}/permissions`, {
+        permissions,
+        ...(password ? { password } : {}),
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "Success",
         description: "User permissions updated successfully!",
@@ -439,11 +566,19 @@ export default function AccountManagement() {
   });
 
   const grantCourseAccessMutation = useMutation({
-    mutationFn: async ({ userId, courseId }: { userId: string; courseId: number }) => {
-      await apiRequest("POST", `/api/admin/users/${userId}/grant-course`, { courseId });
+    mutationFn: async ({
+      userId,
+      courseId,
+    }: {
+      userId: string;
+      courseId: number;
+    }) => {
+      await apiRequest("POST", `/api/admin/users/${userId}/grant-course`, {
+        courseId,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "Success",
         description: "Course access granted successfully!",
@@ -464,7 +599,7 @@ export default function AccountManagement() {
       await apiRequest("DELETE", `/api/admin/users/${userId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "Success",
         description: "User deleted successfully!",
@@ -480,8 +615,12 @@ export default function AccountManagement() {
     },
   });
 
-  const handleUpdatePermissions = (userId: string, permissions: UserPermissions) => {
-    updatePermissionsMutation.mutate({ userId, permissions });
+  const handleUpdatePermissions = (
+    userId: string,
+    permissions: UserPermissions,
+    password?: string
+  ) => {
+    updatePermissionsMutation.mutate({ userId, permissions, password });
   };
 
   const handleGrantCourseAccess = (userId: string, courseId: number) => {
@@ -553,27 +692,39 @@ export default function AccountManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
               <div className="space-y-2">
                 <h4 className="font-semibold">Member</h4>
-                <p className="text-muted-foreground">Standard account with no admin access</p>
+                <p className="text-muted-foreground">
+                  Standard account with no admin access
+                </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-semibold">Blog Admin</h4>
-                <p className="text-muted-foreground">Can create and manage blog posts</p>
+                <p className="text-muted-foreground">
+                  Can create and manage blog posts
+                </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-semibold">Course Admin</h4>
-                <p className="text-muted-foreground">Can create and manage courses</p>
+                <p className="text-muted-foreground">
+                  Can create and manage courses
+                </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-semibold">Forum Moderator</h4>
-                <p className="text-muted-foreground">Can delete other users' posts but can't edit</p>
+                <p className="text-muted-foreground">
+                  Can delete other users' posts but can't edit
+                </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-semibold">Account Manager</h4>
-                <p className="text-muted-foreground">Can manage user permissions (not implemented yet)</p>
+                <p className="text-muted-foreground">
+                  Can manage user permissions (not implemented yet)
+                </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-semibold">Super Admin</h4>
-                <p className="text-muted-foreground">Has all permissions and access to account management</p>
+                <p className="text-muted-foreground">
+                  Has all permissions and access to account management
+                </p>
               </div>
             </div>
           </CardContent>
@@ -583,7 +734,8 @@ export default function AccountManagement() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">
-            Users ({filteredUsers.length}{searchTerm && ` of ${users?.length || 0}`})
+            Users ({filteredUsers.length}
+            {searchTerm && ` of ${users?.length || 0}`})
           </h2>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
@@ -596,7 +748,7 @@ export default function AccountManagement() {
             />
           </div>
         </div>
-        
+
         {filteredUsers.length > 0 ? (
           filteredUsers.map((user: User) => (
             <UserPermissionsCard
@@ -612,7 +764,10 @@ export default function AccountManagement() {
               <div className="text-center text-neutral-500">
                 <Search className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
                 <p className="text-lg font-medium mb-2">No users found</p>
-                <p className="text-sm">Try adjusting your search term or clear the search to see all users.</p>
+                <p className="text-sm">
+                  Try adjusting your search term or clear the search to see all
+                  users.
+                </p>
               </div>
             </CardContent>
           </Card>

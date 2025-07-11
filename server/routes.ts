@@ -611,9 +611,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/admin/users/:id/permissions', isAuthenticated, isSuperAdmin, async (req, res) => {
     try {
       const userId = req.params.id;
-      const { permissions } = req.body;
+      const { permissions, password } = req.body;
       
-      const updatedUser = await storage.updateUserPermissions(userId, permissions);
+      const updatedUser = await storage.updateUserPermissions(userId, permissions, password);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user permissions:", error);
